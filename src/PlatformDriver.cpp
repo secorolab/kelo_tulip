@@ -541,7 +541,7 @@ void PlatformDriver::doControl() {
 	rxdata.setpoint1 = 0;
 	rxdata.setpoint2 = 0;
 
-	// update desired velocity of platform, based on target velocity and veloity ramps
+	// update desired velocity of platform, based on target velocity and velocity ramps
 	velocityPlatformController.calculatePlatformRampedVelocities();
 	
 	for (size_t i = 0; i < nWheels; i++) {
