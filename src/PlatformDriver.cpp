@@ -557,7 +557,7 @@ void PlatformDriver::doControl() {
 		/* calculate wheel target velocity */
 		velocityPlatformController.calculateWheelTargetVelocity(i, wheel_data->encoder_pivot,
                                                                 setpoint2, setpoint1);
-		setpoint1 *= -1; // because of inverted frame
+		setpoint2 *= -1; // because of inverted frame
 
 		/* avoid sending close to zero values */
 		if ( fabs(setpoint1) < wheelsetpointmin )
