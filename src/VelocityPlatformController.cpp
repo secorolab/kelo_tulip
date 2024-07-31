@@ -285,7 +285,7 @@ namespace kelo
         {
             vel_l *= -1;
         }
-        float target_vel_l = Utils::clip(vel_l - delta_vel,
+        float target_vel_l = Utils::clip(vel_l + delta_vel,
                                                   wheel_param.max_linear_velocity,
                                                   -wheel_param.max_linear_velocity);
 
@@ -296,7 +296,7 @@ namespace kelo
         {
             vel_r *= -1;
         }
-        float target_vel_r = Utils::clip(vel_r + delta_vel,
+        float target_vel_r = Utils::clip(vel_r - delta_vel,
                                                   wheel_param.max_linear_velocity,
                                                   -wheel_param.max_linear_velocity);
 
