@@ -81,6 +81,8 @@ add_library(tulip_library
 	src/PlatformDriverROS.cpp
 	src/modules/RobileMasterBattery.cpp
 	src/modules/RobileMasterBatteryROS.cpp
+	src/modules/PowerManagementUnit.cpp
+	src/modules/PowerManagementUnitROS.cpp
 )
 
 target_link_libraries(tulip_library

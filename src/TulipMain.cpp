@@ -44,6 +44,7 @@
 #include "kelo_tulip/EtherCATMaster.h"
 #include "kelo_tulip/PlatformDriverROS.h"
 #include "kelo_tulip/modules/RobileMasterBatteryROS.h"
+#include "kelo_tulip/modules/PowerManagementUnitROS.h"
 #include <ros/ros.h>
 
 // create and configure one module
@@ -54,6 +55,8 @@ kelo::EtherCATModuleROS* createModule(ros::NodeHandle& nh, std::string moduleTyp
 		module = new kelo::RobileMasterBatteryROS();
 	} else if (moduleType == "platform_driver") {
 		module = new kelo::PlatformDriverROS();
+	} else if (moduleType == "power_management_unit") {
+		module = new kelo::PowerManagementUnitROS();
 	} else {
 		std::cout << "Unknown module type: " << moduleType << std::endl;
 		return NULL;
@@ -154,7 +157,7 @@ int main (int argc, char** argv)
 	// ROS main loop
 	ros::Rate rate(20.0f); // hz
 	while (ros::ok()) {
-		ros::spinOnce();		
+		ros::spinOnce();
 
 		for (size_t i = 0; i < rosModules.size(); i++)
 			rosModules[i]->step();

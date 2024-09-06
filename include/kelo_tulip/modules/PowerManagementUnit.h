@@ -42,86 +42,51 @@
  ******************************************************************************/
 
 
-#ifndef MODULES_ROBILEMASTERBATTERY_H
-#define MODULES_ROBILEMASTERBATTERY_H
+#ifndef MODULES_POWERMANAGEMENTUNIT_H
+#define MODULES_POWERMANAGEMENTUNIT_H
 
 #include "kelo_tulip/EtherCATModule.h"
 #include <boost/thread.hpp>
 
 namespace kelo {
 
-class RobileMasterBattery : public EtherCATModule {
+class PowerManagementUnit : public EtherCATModule {
 public:
-	RobileMasterBattery(int slaveNumber);
-	virtual ~RobileMasterBattery();
+	PowerManagementUnit(int slaveNumber);
+	virtual ~PowerManagementUnit();
 	
 	bool initEtherCAT(ec_slavet* ecx_slaves, int ecx_slavecount);
 	bool initEtherCAT2(ecx_contextt* ecx_context, int ecx_slavecount);
 	bool step();
 	
-	const struct RobileMasterBatteryProcessDataInput* getProcessDataInput();
+	const struct PowerManagementUnitProcessDataInput* getProcessDataInput();
 
-	void resetError();
 	void shutdown(int seconds);
-	void startCharge();
-	void stopCharge();
-	
-	void pump(bool enablePump);
-	void dock(bool dock);
-	void undock(bool undock);
-	
-	float getVoltage();
 	
 private:
 	ec_slavet* ecx_slaves;
 	int slaveNumber;
-	
-	bool flagResetError;
-	bool flagShutdown;
-	bool robileCharge;
-	bool robileEnablePump;
-	bool robileEnableDock;
-	bool robileEnableUndock;
-
-	bool autoResetError;
-
-	boost::posix_time::ptime pumpStartTime;
-	boost::posix_time::ptime dockStartTime;
-	boost::posix_time::ptime undockStartTime;
-		
+	uint16_t status;
+	float current;
 	float voltage;
+	float power;
 };
 
-struct __attribute__((packed)) RobileMasterBatteryProcessDataInput {
-	uint64_t TimeStamp;  	 	 // EtherCAT timestamp ms
-	uint16_t Status;     	 	 // Status bits
-	uint16_t Error;					 // Error bits: bit0:LowBAT,bit1:EMPTYFRAM,bit2:WrongFRAM,bit3:WrongCHGARGER,bit4:OverloadCHG,bit5:OverCurrentError,bit6:Watchdog
-	uint16_t Warning;				 // Warning bits:bit0:OverCurrentWarning,bit1:Shutdown
-	float    OutputCurrent;  // Total current consumption
-	float    OutputVoltage;  // System Voltage
-	float    OutputPower;    // Total power consumption of the system
-	float    AuxPortCurrent; // Current consumption at Auxiliary port
-	float    GenericData1; 	 // Generic data, might be used for different purposes
-	uint32_t  GenericData2;	 // Generic data, might be used for different purposes
-	
-	uint16_t bmsm_PwrDeviceId;
-	uint16_t bmsm_Status;
-	float    bmsm_Voltage;
-	float    bmsm_Current;
-	float    bmsm_Temperature;
-	uint16_t bmsm_SOC;
-	uint32_t bmsm_SN;
-	uint32_t bmsm_BatData1;
-	float    bmsm_BatData2;
+struct __attribute__((packed)) PowerManagementUnitProcessDataInput {
+	uint16_t STATUS;     	 	 // Status bits
+	uint64_t TIME_STAMP;  	 	 // EtherCAT timestamp ms
+	float    CURRENT;  // Total current consumption
+	float    VOLTAGE;  // System Voltage
+	float    POWER;    // Total power consumption of the system
+	float    PARAM1; // Generic data, might be used for different purposes
+	uint32_t  PARAM2;	 // Generic data, might be used for different purposes
 };
 
-struct __attribute__((packed)) RobileMasterBatteryProcessDataOutput {
-	uint32_t      Command1;
-	uint32_t      Command2;
-	uint16_t      Shutdown;
-	uint16_t      PwrDeviceId;
+struct __attribute__((packed)) PowerManagementUnitProcessDataOutput {
+	uint16_t      SHUTDOWN;
+	uint32_t      COMMAND;
 };
 
 } // namespace kelp
 
-#endif // MODULES_ROBILEMASTERBATTERY_H
+#endif // MODULES_POWERMANAGEMENTUNIT_H
