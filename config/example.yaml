@@ -1,5 +1,5 @@
 num_wheels: 4
-device: enp0s31f6
+device: enp2s0
 
 #vlin_max: 1.2  # m / s
 #va_max: 1.1  # rad / s
@@ -18,25 +18,24 @@ modules:
 
 wheel0:
   ethercat_number: 3
-  x: 0.233
-  y: 0.1165
+  x: 0.188
+  y: 0.2075
   a: 0
 
 wheel1:
-  ethercat_number: 5
-  x: -0.233
-  y: 0.1165
+  ethercat_number: 4
+  x: -0.188
+  y: 0.2075
   a: 0
 
 wheel2:
-  ethercat_number: 7
-  x: -0.233
-  y: -0.1165
+  ethercat_number: 6
+  x: -0.188
+  y: -0.2075
   a: 0
 
 wheel3:
-  ethercat_number: 9
-  x: 0.233
-  y: -0.1165
+  ethercat_number: 7
+  x: 0.188
+  y: -0.2075
   a: 0
-
