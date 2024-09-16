@@ -41,28 +41,56 @@
  *
  ******************************************************************************/
 
-#ifndef ETHERCATMODULE_H
-#define ETHERCATMODULE_H
 
-extern "C" {
-#include "kelo_tulip/soem/ethercattype.h"
-#include "nicdrv.h"
-#include "kelo_tulip/soem/ethercatbase.h"
-#include "kelo_tulip/soem/ethercatmain.h"
-}
+#ifndef MODULES_ROBILEMASTERBATTERYROS_H
+#define MODULES_ROBILEMASTERBATTERYROS_H
+
+#include "kelo_tulip/modules/RobileMasterBattery.h"
+#include "kelo_tulip/EtherCATModuleROS.h"
+#include <std_msgs/msg/empty.hpp>
+#include <std_msgs/msg/int32.hpp>
+#include <rclcpp/rclcpp.hpp>
+#include <std_msgs/msg/float32.hpp>
+#include <std_msgs/msg/float64_multi_array.hpp>
 
 namespace kelo {
 
-class EtherCATModule {
+//! ROS interface for RobileMasterBattery
+//! Currently only provides two topics, for shutdown and to get battery voltage.
+
+class RobileMasterBatteryROS : public EtherCATModuleROS {
 public:
-	EtherCATModule();
-	virtual ~EtherCATModule();
+	RobileMasterBatteryROS();
+	virtual ~RobileMasterBatteryROS();
+
+	virtual bool init(const std::string& configPrefix);
+
+	virtual bool step();
+
+	virtual std::string getType();
+
+	virtual EtherCATModule* getEtherCATModule();
 	
-	virtual bool initEtherCAT(ec_slavet* ecx_slaves, int ecx_slavecount) = 0;
-	virtual bool initEtherCAT2(ecx_contextt* ecx_context, int ecx_slavecount) = 0;
-	virtual bool step() = 0;
+protected:
+	void callbackResetError(const std_msgs::msg::Empty::SharedPtr msg);
+	void callbackShutdown(const std_msgs::msg::Int32::SharedPtr msg);
+	void callbackChargerStart(const std_msgs::msg::Int32::SharedPtr msg);
+	void callbackChargerStop(const std_msgs::msg::Int32::SharedPtr msg);
+
+	void publishEthercatInput();
+
+	std::unique_ptr<RobileMasterBattery> battery;
+	
+	rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr batteryPublisher;
+	rclcpp::Publisher<std_msgs::msg::Float64MultiArray>::SharedPtr processDataInputPublisher;
+	rclcpp::Subscription<std_msgs::msg::Empty>::SharedPtr resetErrorSubscriber;
+	rclcpp::Subscription<std_msgs::msg::Int32>::SharedPtr shutdownSubscriber;
+	rclcpp::Subscription<std_msgs::msg::Int32>::SharedPtr chargerStartSubscriber;
+	rclcpp::Subscription<std_msgs::msg::Int32>::SharedPtr chargerStopSubscriber;
+		
+	std::string topicPrefix;
 };
 
-} // namespace kelp
+} // namespace kelo
 
-#endif // ETHERCATMODULE_H
+#endif // MODULES_ROBILEMASTERBATTERYROS_H

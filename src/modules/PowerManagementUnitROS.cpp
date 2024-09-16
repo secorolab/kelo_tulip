@@ -41,28 +41,59 @@
  *
  ******************************************************************************/
 
-#ifndef ETHERCATMODULE_H
-#define ETHERCATMODULE_H
+#include "kelo_tulip/modules/PowerManagementUnitROS.h"
+#include <std_msgs/msg/float32.hpp>
+#include <std_msgs/msg/float64_multi_array.h>
 
-extern "C" {
-#include "kelo_tulip/soem/ethercattype.h"
-#include "nicdrv.h"
-#include "kelo_tulip/soem/ethercatbase.h"
-#include "kelo_tulip/soem/ethercatmain.h"
-}
+namespace kelo
+{
 
-namespace kelo {
+	PowerManagementUnitROS::PowerManagementUnitROS()
+		: EtherCATModuleROS(),
+		  pmu(nullptr)
+	{
+		// Constructor code (if any additional initialization is needed)
+	}
 
-class EtherCATModule {
-public:
-	EtherCATModule();
-	virtual ~EtherCATModule();
-	
-	virtual bool initEtherCAT(ec_slavet* ecx_slaves, int ecx_slavecount) = 0;
-	virtual bool initEtherCAT2(ecx_contextt* ecx_context, int ecx_slavecount) = 0;
-	virtual bool step() = 0;
-};
+	PowerManagementUnitROS::~PowerManagementUnitROS()
+	{
+	}
 
-} // namespace kelp
+	bool PowerManagementUnitROS::init(const std::string &configPrefix)
+	{
+		// get EtherCAT slave number
+		int ethercatNumber = this->rclcpp::Node::declare_parameter<int>(configPrefix + "ethercat_number", 0);
 
-#endif // ETHERCATMODULE_H
+		if (ethercatNumber <= 0)
+		{
+			RCLCPP_ERROR(this->get_logger(), "EtherCAT number for power management unit not set.");
+			return false;
+		}
+
+		// Create EtherCAT module
+		pmu = new PowerManagementUnit(ethercatNumber);
+		if (!pmu)
+		{
+			RCLCPP_ERROR(this->get_logger(), "Failed to create PowerManagementUnit.");
+			return false;
+		}
+
+		return true;
+	}
+
+	bool PowerManagementUnitROS::step()
+	{
+		return true;
+	}
+
+	std::string PowerManagementUnitROS::getType()
+	{
+		return "power_management_unit";
+	};
+
+	EtherCATModule *PowerManagementUnitROS::getEtherCATModule()
+	{
+		return pmu;
+	}
+
+} // namespace kelo

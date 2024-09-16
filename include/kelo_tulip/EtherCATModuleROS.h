@@ -41,28 +41,45 @@
  *
  ******************************************************************************/
 
-#ifndef ETHERCATMODULE_H
-#define ETHERCATMODULE_H
+#ifndef ETHERCATMODULEROS_H
+#define ETHERCATMODULEROS_H
 
-extern "C" {
-#include "kelo_tulip/soem/ethercattype.h"
-#include "nicdrv.h"
-#include "kelo_tulip/soem/ethercatbase.h"
-#include "kelo_tulip/soem/ethercatmain.h"
-}
+#include "kelo_tulip/EtherCATModule.h"
+#include <rclcpp/rclcpp.hpp>
 
 namespace kelo {
 
-class EtherCATModule {
+//! Base class for ROS interface of a module.
+//! This class should create a new EtherCATModule and configure it.
+//! The created module will then be passed on to the EtherCAT master,
+//! while this ROS module can provide external access via ROS.
+
+class EtherCATModuleROS : public rclcpp::Node {
 public:
-	EtherCATModule();
-	virtual ~EtherCATModule();
+	//! Default constructor.
+	EtherCATModuleROS();
 	
-	virtual bool initEtherCAT(ec_slavet* ecx_slaves, int ecx_slavecount) = 0;
-	virtual bool initEtherCAT2(ecx_contextt* ecx_context, int ecx_slavecount) = 0;
-	virtual bool step() = 0;
+	//! Default destructor.
+	virtual ~EtherCATModuleROS();
+
+	//! Initialize this module, must be overridden.
+	//! Returns true if module could be successfully initialized.
+    virtual bool init(const std::string& configPrefix) = 0;
+
+	//! Function that is continously called by ROS main loop to publish or process data.
+	//! Returns true if module can continue to run.
+	virtual bool step();
+
+	//! Return the type of this module as string.
+	virtual std::string getType() = 0;
+
+	//! Return internal EtherCAT module, must be overridden.
+	virtual EtherCATModule* getEtherCATModule() = 0;
+
+protected:
+
 };
 
 } // namespace kelp
 
-#endif // ETHERCATMODULE_H
+#endif // ETHERCATMODULEROS_H

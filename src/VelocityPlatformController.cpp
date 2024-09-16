@@ -83,6 +83,36 @@ namespace kelo
         platform_target_vel_.a = ( fabs(vel_a) < 0.0000001 ) ? 0.0 : vel_a;
     }
 
+    void VelocityPlatformController::setPlatformMaxLinVelocity(float max_vel_linear)
+    {
+        platform_limits_.max_vel_linear = max_vel_linear;
+    }
+
+    void VelocityPlatformController::setPlatformMaxAngVelocity(float max_vel_angular)
+    {
+        platform_limits_.max_vel_angular = max_vel_angular;
+    }
+
+    void VelocityPlatformController::setPlatformMaxLinAcceleration(float max_acc_linear)
+    {
+        platform_limits_.max_acc_linear = max_acc_linear;
+    }
+
+    void VelocityPlatformController::setPlatformMaxAngAcceleration(float max_acc_angular)
+    {
+        platform_limits_.max_acc_angular = max_acc_angular;
+    }
+
+    void VelocityPlatformController::setPlatformMaxLinDeceleration(float max_dec_linear)
+    {
+        platform_limits_.max_dec_linear = max_dec_linear;
+    }
+
+    void VelocityPlatformController::setPlatformMaxAngDeceleration(float max_dec_angular)
+    {
+        platform_limits_.max_dec_angular = max_dec_angular;
+    }
+
     void VelocityPlatformController::initialise(const std::vector<WheelConfig>& wheel_configs)
     {
         // FIXME: remove hardcoding wheel params
@@ -97,6 +127,10 @@ namespace kelo
 
         for ( size_t i = 0; i < num_of_wheels; i++ )
         {
+            // float wheel_diameter = wheel_configs[i].model.diameter;
+            // float wheel_caster = wheel_configs[i].model.casteroffset;
+            // float wheel_distance = wheel_configs[i].model.wheeldistance;
+
             WheelParamVelocity wheel_param;
             wheel_param.relative_position_l.x = -1 * wheel_caster;
             wheel_param.relative_position_l.y = 0.5 * wheel_distance;
@@ -109,30 +143,12 @@ namespace kelo
             wheel_param.wheel_diameter = wheel_diameter;
             wheel_param.max_pivot_error = M_PI * 0.25f;
 
-	          wheel_param.pivot_position.x = wheel_configs[i].x;
-	          wheel_param.pivot_position.y = wheel_configs[i].y;
-	          wheel_param.pivot_offset = wheel_configs[i].a;
+            wheel_param.pivot_position.x = wheel_configs[i].x;
+            wheel_param.pivot_position.y = wheel_configs[i].y;
+            wheel_param.pivot_offset = wheel_configs[i].a;
 
             wheel_params_.push_back(wheel_param);
         }
-    }
-
-    void VelocityPlatformController::setPlatformMaxVelocity(float max_vel_linear, float max_vel_angular)
-    {
-    	platform_limits_.max_vel_linear = max_vel_linear;
-    	platform_limits_.max_vel_angular = max_vel_angular;
-    }
-
-    void VelocityPlatformController::setPlatformMaxAcceleration(float max_acc_linear, float max_acc_angular)
-    {
-    	platform_limits_.max_acc_linear = max_acc_linear;
-    	platform_limits_.max_acc_angular = max_acc_angular;
-    }
-
-    void VelocityPlatformController::setPlatformMaxDeceleration(float max_dec_linear, float max_dec_angular)
-    {
-    	platform_limits_.max_dec_linear = max_dec_linear;
-    	platform_limits_.max_dec_angular = max_dec_angular;
     }
             
     void VelocityPlatformController::calculatePlatformRampedVelocities()
@@ -193,6 +209,131 @@ namespace kelo
         time_last_ramping = now;
     }
 
+    void VelocityPlatformController::calculateWheelTargetTorques(
+            double *wheel_torques,
+            double *pivot_angles,
+            double *wheel_coordinates,
+            double *pivot_angles_deviation,
+            double *measured_platform_velocity,
+            double *platform_damping_parameters,
+            const gsl_matrix *K,
+            const gsl_matrix *W,
+            const unsigned int M,
+            const unsigned int N)
+    {
+        // TODO: pass wheel coordinates; pivot_deviations;
+        bool debug = false;
+        
+        gsl_matrix *A = gsl_matrix_alloc(N, M);
+        gsl_matrix *A_inv_T = gsl_matrix_alloc(M, N);
+        gsl_matrix *A_tmp = gsl_matrix_alloc(N, M);
+        gsl_matrix *A_inv_T_tmp = gsl_matrix_alloc(M, N);
+        gsl_vector *work = gsl_vector_alloc(N);
+        gsl_vector *u = gsl_vector_alloc(N);
+        gsl_matrix *V = gsl_matrix_alloc(N, N);
+        gsl_matrix *u_inv = gsl_matrix_alloc(N, N);
+        gsl_matrix *b_verify = gsl_matrix_alloc(N, 1);
+        gsl_matrix *b = gsl_matrix_alloc(N, 1);
+
+        double target_platform_torque[N];
+        target_platform_torque[0] = platform_damping_parameters[0] * (platform_ramped_vel_.x - measured_platform_velocity[0]);
+        target_platform_torque[1] = platform_damping_parameters[1] * (platform_ramped_vel_.y - measured_platform_velocity[1]);
+        target_platform_torque[2] = platform_damping_parameters[2] * (platform_ramped_vel_.a - measured_platform_velocity[2]);
+
+        // setting desired force to be experienced by the platform
+        gsl_matrix_set(b, 0, 0, target_platform_torque[0]);  // force is set in X-direction
+        gsl_matrix_set(b, 1, 0, target_platform_torque[1]);  // force is set in Y-direction
+        gsl_matrix_set(b, 2, 0, target_platform_torque[2]); // moment is set in anti-clockwise direction	
+
+        // TODO: Calculate wheel target torques
+        functions_main(wheel_torques,
+                       pivot_angles,
+                       wheel_coordinates,
+                       pivot_angles_deviation,
+                       b,
+                       b_verify,
+                       A,
+                       A_inv_T,
+                       A_tmp,
+                       A_inv_T_tmp,
+                       work,
+                       W,
+                       K,
+                       u,
+                       V,
+                       u_inv,
+                       M,
+                       N,
+                       debug);
+
+        gsl_matrix_free(b_verify);
+        gsl_matrix_free(b);
+        gsl_matrix_free(A);
+        gsl_matrix_free(A_inv_T);
+        gsl_matrix_free(A_tmp);
+        gsl_matrix_free(A_inv_T_tmp);
+        gsl_vector_free(u);
+        gsl_matrix_free(u_inv);
+        gsl_matrix_free(V);
+        gsl_vector_free(work);                       
+    }
+
+    void VelocityPlatformController::getPivotError(
+            const size_t &wheel_index,
+            const float &raw_pivot_angle,
+            float &pivot_error)
+    {
+        /* command 0 angular vel when platform has been commanded 0 vel
+         * If this is not done, then the wheels pivot to face front of platform
+         * even when the platform is commanded zero velocity.
+         */
+        if ( platform_ramped_vel_.x == 0 && platform_ramped_vel_.y == 0 && platform_ramped_vel_.a == 0 )
+        {
+            pivot_error = 0.0f;
+            return;
+        }
+
+        const WheelParamVelocity &wheel_param = wheel_params_[wheel_index];
+
+        /* pivot angle w.r.t. front of platform (between -pi and pi) */
+        float pivot_angle = Utils::clipAngle(raw_pivot_angle
+                                                      - wheel_param.pivot_offset);
+
+        /* pivot angle to unity vector */
+        Point2D unit_pivot_vector;
+        unit_pivot_vector.x = cos(pivot_angle);
+        unit_pivot_vector.y = sin(pivot_angle); 
+
+        /* position of wheels relative to platform centre */
+        Point2D position_l, position_r;
+        position_l.x = (wheel_param.relative_position_l.x * unit_pivot_vector.x
+                        - wheel_param.relative_position_l.y * unit_pivot_vector.y)
+                       + wheel_param.pivot_position.x;
+        position_l.y = (wheel_param.relative_position_l.x * unit_pivot_vector.y
+                        + wheel_param.relative_position_l.y * unit_pivot_vector.x)
+                       + wheel_param.pivot_position.y;
+        position_r.x = (wheel_param.relative_position_r.x * unit_pivot_vector.x
+                        - wheel_param.relative_position_r.y * unit_pivot_vector.y)
+                       + wheel_param.pivot_position.x;
+        position_r.y = (wheel_param.relative_position_r.x * unit_pivot_vector.y
+                        + wheel_param.relative_position_r.y * unit_pivot_vector.x)
+                       + wheel_param.pivot_position.y;
+
+        /* velocity target vector at pivot position */
+        Point2D target_vel_at_pivot;
+        target_vel_at_pivot.x = platform_ramped_vel_.x
+                                - (platform_ramped_vel_.a * wheel_param.pivot_position.y);
+        target_vel_at_pivot.y = platform_ramped_vel_.y
+                                + (platform_ramped_vel_.a * wheel_param.pivot_position.x);
+
+        /* target pivot vector to angle */
+        float target_pivot_angle = atan2(target_vel_at_pivot.y, target_vel_at_pivot.x);
+
+        /* calculate error pivot angle as shortest route */
+        pivot_error = Utils::getShortestAngle(target_pivot_angle,
+                                                             pivot_angle);
+    }
+    
     void VelocityPlatformController::calculateWheelTargetVelocity(
             const size_t &wheel_index,
             const float &raw_pivot_angle,

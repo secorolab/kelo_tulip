@@ -41,28 +41,73 @@
  *
  ******************************************************************************/
 
-#ifndef ETHERCATMODULE_H
-#define ETHERCATMODULE_H
 
-extern "C" {
-#include "kelo_tulip/soem/ethercattype.h"
-#include "nicdrv.h"
-#include "kelo_tulip/soem/ethercatbase.h"
-#include "kelo_tulip/soem/ethercatmain.h"
-}
+// #ifndef MODULES_POWERMANAGEMENTUNITROS_H
+// #define MODULES_POWERMANAGEMENTUNITROS_H
+
+// #include "kelo_tulip/modules/PowerManagementUnit.h"
+// #include "kelo_tulip/EtherCATModuleROS.h"
+// #include <std_msgs/Empty.h>
+// #include <std_msgs/Int32.h>
+
+// namespace kelo {
+
+// //! ROS interface for PowerManagementUnit
+
+// class PowerManagementUnitROS : public EtherCATModuleROS {
+// public:
+// 	PowerManagementUnitROS();
+// 	virtual ~PowerManagementUnitROS();
+
+// 	virtual bool init(ros::NodeHandle& nh, std::string configPrefix);
+
+// 	virtual bool step();
+
+// 	virtual std::string getType();
+
+// 	virtual EtherCATModule* getEtherCATModule();
+	
+// protected:
+// 	PowerManagementUnit* pmu;
+
+// };
+
+// } // namespace kelo
+
+// #endif // MODULES_POWERMANAGEMENTUNITROS_H
+
+#ifndef MODULES_POWERMANAGEMENTUNITROS_H
+#define MODULES_POWERMANAGEMENTUNITROS_H
+
+#include "kelo_tulip/modules/PowerManagementUnit.h"
+#include "kelo_tulip/EtherCATModuleROS.h"
+#include <std_msgs/msg/empty.hpp>
+#include <std_msgs/msg/int32.hpp>
+#include <rclcpp/rclcpp.hpp>
 
 namespace kelo {
 
-class EtherCATModule {
+//! ROS2 interface for PowerManagementUnit
+
+class PowerManagementUnitROS : public EtherCATModuleROS {
 public:
-	EtherCATModule();
-	virtual ~EtherCATModule();
-	
-	virtual bool initEtherCAT(ec_slavet* ecx_slaves, int ecx_slavecount) = 0;
-	virtual bool initEtherCAT2(ecx_contextt* ecx_context, int ecx_slavecount) = 0;
-	virtual bool step() = 0;
+    PowerManagementUnitROS();
+
+    virtual ~PowerManagementUnitROS();
+
+    virtual bool init(const std::string& configPrefix);
+
+    virtual bool step();
+
+    virtual std::string getType();
+
+    virtual EtherCATModule* getEtherCATModule();
+    
+protected:
+    PowerManagementUnit* pmu;
+
 };
 
-} // namespace kelp
+} // namespace kelo
 
-#endif // ETHERCATMODULE_H
+#endif // MODULES_POWERMANAGEMENTUNITROS_HPP

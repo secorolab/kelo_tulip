@@ -41,28 +41,74 @@
  *
  ******************************************************************************/
 
-#ifndef ETHERCATMODULE_H
-#define ETHERCATMODULE_H
-
-extern "C" {
-#include "kelo_tulip/soem/ethercattype.h"
-#include "nicdrv.h"
-#include "kelo_tulip/soem/ethercatbase.h"
-#include "kelo_tulip/soem/ethercatmain.h"
-}
+#include <iostream>
+#include "kelo_tulip/modules/PowerManagementUnit.h"
 
 namespace kelo {
 
-class EtherCATModule {
-public:
-	EtherCATModule();
-	virtual ~EtherCATModule();
+PowerManagementUnit::PowerManagementUnit(int slaveNumber) : EtherCATModule() {
+	this->slaveNumber = slaveNumber;
+
+	ecx_slaves = 0;
+
+	voltage = 0;
+	current = 0;
+	power = 0;
+}
+
+PowerManagementUnit::~PowerManagementUnit() {
+}
+
+bool PowerManagementUnit::initEtherCAT2(ecx_contextt* ecx_context, int ecx_slavecount)
+{
+	return true;
+}
+
+bool PowerManagementUnit::initEtherCAT(ec_slavet* ecx_slaves, int ecx_slavecount)  {
+	this->ecx_slaves = ecx_slaves;
+
+	if (!(slaveNumber > 0))
+		return false;
+		
+	std::cout << "Power Management Unit is slave #" << slaveNumber << std::endl; 
+	if (slaveNumber > ecx_slavecount) { // slaves start index 1
+		std::cout << "Found only " << ecx_slavecount << " EtherCAT slaves, but config requires at least " << slaveNumber << std::endl; 
+		return false;
+	}
+	if (ecx_slaves[slaveNumber].eep_id != 2415923201 && ecx_slaves[slaveNumber].eep_id != 0) {
+		std::cout << "EtherCAT slave #" << slaveNumber << " has wrong id: " << ecx_slaves[slaveNumber].eep_id << std::endl;
+		return false;
+	}
+
+	return true;
+}
+
+bool PowerManagementUnit::step() {
+	if (slaveNumber == 0)
+		return false;
+
+ 	PowerManagementUnitProcessDataInput* input = (PowerManagementUnitProcessDataInput*) ecx_slaves[slaveNumber].inputs;
+	status = input->STATUS;
+	current = input->CURRENT;
+	voltage = input->VOLTAGE;
+	power = input->POWER;
+
+	PowerManagementUnitProcessDataOutput data;
+
+	data.SHUTDOWN = 0;
+	data.COMMAND = 32;
 	
-	virtual bool initEtherCAT(ec_slavet* ecx_slaves, int ecx_slavecount) = 0;
-	virtual bool initEtherCAT2(ecx_contextt* ecx_context, int ecx_slavecount) = 0;
-	virtual bool step() = 0;
-};
+	*((PowerManagementUnitProcessDataOutput*) ecx_slaves[slaveNumber].outputs) = data;
 
-} // namespace kelp
+	return true;
+}
 
-#endif // ETHERCATMODULE_H
+const PowerManagementUnitProcessDataInput* PowerManagementUnit::getProcessDataInput() {
+	return (PowerManagementUnitProcessDataInput*) ecx_slaves[slaveNumber].inputs;
+}
+
+void PowerManagementUnit::shutdown(int seconds) {
+	
+}
+
+} //namespace kelo

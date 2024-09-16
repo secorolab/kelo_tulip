@@ -1,6 +1,10 @@
+> [!WARNING]  
+> The current implementation of *torque control* is not stable, so for stable use it is recommended to use the robot in *velocity control* mode, which is enabled by default.The instability of the torque control may be due to occasional loss of contact with the ground, causing the wheels to spin at high speed.
+
+
 # KELO Tulip
 
-This package contains the *KELO Tulip* software. This software takes a velocity vector for the overall platform and converts it to commands for the individual KELO Drives of the platform. It implements an EtherCAT master to communicate with the KELO Drives and provides a simple velocity controller that can be used on real robots as well as for simulation.
+This package contains the *KELO Tulip* software. This software takes a velocity vector for the overall platform and converts it to commands for the individual KELO Drives of the platform with an option to control either in VELOCITY_CONTROL or in TORQUE_CONTROL modes. It implements an EtherCAT master to communicate with the KELO Drives and provides a simple velocity controller that can be used on real robots as well as for simulation.
 
 ## KELO Drives and how to build a platform
 The [KELO Drive](https://www.kelo-robotics.com/technologies/#kelo-drives) is the patent pending novel drive concept for mobile robots developed by KELO robotics. These wheels can be attached to any rigid platform in order to transform it into a mobile robot. It can even be used to [robotize a container](https://www.kelo-robotics.com/customized-designs/#robotized-material-container). A few screws are enough.
@@ -11,19 +15,20 @@ You can move your mobile platform via a joypad for test purposes or use any soft
 
 ## System requirements
 
-This software was tested on Ubuntu 16 with ROS Kinetic, Ubuntu 18 with ROS Melodic and Ubuntu 20 with ROS Noetic. Other Linux flavors should work as well.
+This software has been tested on Ubuntu 22.04 with ROS Humble and ROS Rolling. Please switch to the `ros1` branch to use other tested versions, including Ubuntu 16 with ROS Kinetic, Ubuntu 18 with ROS Melodic and Ubuntu 20 with ROS Noetic. 
 
-For ROS it is enough to install the base system (for Noetic ros-noetic-ros-base). In addition it requires
+For ROS it is enough to install the base system (for Humble ros-humble-ros-base). Additionally, GSL library should be installed, as it is used for the feature of compliant control of the wheels.
 
 ```
-sudo apt install ros-noetic-tf
+sudo apt install ros-humble-ros-base  
+sudo apt install libgsl-dev
 ```
 
-If another ROS version is used, replace the term noetic accordingly in these commands.
+If another ROS version is used, replace the term *humble* accordingly in these commands.
 
 ## Installation
 
-The package can be compiled like any ROS package. Clone or copy it into a ROS workspace source folder and run `catkin_make` or `catkin build`, depending on your preferences.
+The package can be compiled like any ROS package. Clone or copy it into a ROS workspace source folder and run `colcon build`, depending on your preferences.
 
 
 ### Permissions
@@ -34,21 +39,13 @@ Special permissions need to be granted to the generated executable, since it nee
 sudo setcap cap_net_raw+ep <name_of_executable>
 ```
 
-Optionally, the command can be applied during the build process by passing the `-DUSE_SETCAP=ON` option to catkin. Default is `OFF`.
+The executable can be found in `install/kelo_tulip/lib` directory.
 
-```
-catkin_make -DUSE_SETCAP=ON
-```
-OR
-```
-catkin build kelo_tulip -DUSE_SETCAP=ON
-```
-
-**Note**: If you use this flag, you will be asked to input the sudo password during the build process. It might look like the build is going on but you need to lookout for `[sudo] password for <username>` in the output and enter the password after this prompt had appeared. If not, the build process will continue forever.
+**Note**: This comand is included in the CMakeLists.txt, so it will ask for user password while building kelo_tulip package. It is sometimes not visible in the terminal. It might look like the build is going on but you need to lookout for `[sudo] password for <username>` in the output and enter the password after this prompt had appeared. If not, the build process will continue forever.
 
 ### Finding dynamic libraries
 
-If using Ubuntu 18 or newer (with ROS Melodic or Noetic), running the setcap command as described above can cause the executable to not find all dynamic libraries anymore. This is because the dynamic linker works in a "secure-execution mode" when the capabilities of a program changed, in which it ignores most environment variables such as LD_LIBRARY_PATH. A typical error after starting reads like this:
+In newer ROS verxions running the setcap command as described above can cause the executable to not find all dynamic libraries anymore. This is because the dynamic linker works in a "secure-execution mode" when the capabilities of a program changed, in which it ignores most environment variables such as LD_LIBRARY_PATH. A typical error after starting reads like this:
 
 ```
 devel/lib/kelo_tulip/platform_driver: error while loading shared libraries: libtf2_ros.so: cannot open shared object file: No such file or directory
@@ -57,13 +54,13 @@ devel/lib/kelo_tulip/platform_driver: error while loading shared libraries: libt
 
 In that case it is recommended to set the path to those libraries on system level. The following method should work on default installations, but please adapt accordingly if you already made other changes in your system.
 
-For ROS Noetic, the following command will add an entry to point to the dynamic libraries of ROS:
+For ROS2 Humble, the following command will add an entry to point to the dynamic libraries of ROS:
 
 ```
-sudo sh -c 'echo "/opt/ros/noetic/lib/" > /etc/ld.so.conf.d/ros.conf'
+sudo sh -c 'echo "/opt/ros/humble/lib/" > /etc/ld.so.conf.d/ros.conf'
 ```
 
-If not using ROS Noetic, the path there should be changed accordingly.
+If not using ROS2 Humble, the path there should be changed accordingly.
 
 Afterwards you need to run
 
@@ -79,19 +76,19 @@ to make the changes take effect.
 The program can be started by running
 
 ```
-roslaunch kelo_tulip example.launch
+ros2 launch kelo_tulip example.launch
 ```
 
 ### Parameters
 
-The default launch file in `kelo_tulip/launch/example.launch` loads the YAML configuration from `config/example.yaml`. Feel free to change parameters directly in this config file, or to make a copy and adjust the launch file to load the new file.
+The default launch file in `kelo_tulip/launch/example.launch.py` loads the YAML configuration from `config/example.yaml`. Feel free to change parameters directly in this config file, or update the environment variable `ROBOT_NAME`. Currently parameters for some of the configurations (*robile1, robile2, robile3, robile4, freddy*) are avaialble in the config folder.
 
 #### Network interface
 
 The following setting defines the network interface used by the driver:
 
 ```
-device: enp2s0
+device: eno1
 ```
 
 This setting must be adjusted to the network interface by which the KELO drives are connected via EtherCAT.
@@ -119,7 +116,7 @@ The values `x` and `y` are the coordinates of the wheels center according to the
 
 ### ROS Interfaces
 
-Currently the kelo_tulip software uses ROS as a middleware, subscribing resp. publishing to the following topics.
+Currently the kelo_tulip software uses ROS as a middleware, and publishing data to the following topics.
 
 #### /cmd_vel
 
@@ -150,6 +147,13 @@ On this topic an integer representing status information about the controller is
 | 0x0400    | Timestamp of one KELO Drive did not increase as expected, probably it stopped communicating.
 | 0x0800    | One KELO Drive did not have the expected status bits set, probably it got deactivated for some reasons.
 
+## Controllers
+
+The robot can be controlled in both velocity and torque control modes. To switch between them, the ROS parameter `/base_control_mode` can be set to either *VELOCITY_CONTROL* or *TORQUE_CONTROL*. By default it is set to *VELOCITY_CONTROL* in the configuration file. To switch between them from the command line, e.g. to torque control, the following command can be used,
+
+```
+ros2 param set /platform_driver /base_control_mode TORQUE_CONTROL
+```
 
 ### Velocity controller
 
@@ -194,19 +198,8 @@ This is the main function that computes the setpoint for the left and right hub 
 
 The result is the setpoints for the left and right hubwheel, which can then be sent to the real KELO drive.
 
+### Torque controller
 
+kelo_tulip also includes an implementation of a simple torque controller, which allows for compliant motion of the robot. The controller itself is developed in C language and it is ROS independent. 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+The description of how the torque controller works is as follows.The joypad command is taken as input and mapped to the platform force, which is a scaled quantity of the platform velocity difference, scaled by a factor of the *platform_damping* parameters instantiated in the configuration file. An inverse dynamics solver is used to determine the wheel torques to achieve the desired platform force. It also allows to enable/disable/provide weights both in the joint space of wheels and the Cartesian task space. For this purpose, the diagnal elements of the matrices `W` and `K` in the *doControl()* function of *PlatformDriver.cpp* should be updated. Assigning it to zero deactivates the corresponding dimension of control.

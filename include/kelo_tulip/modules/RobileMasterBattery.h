@@ -56,8 +56,12 @@ public:
 	virtual ~RobileMasterBattery();
 	
 	bool initEtherCAT(ec_slavet* ecx_slaves, int ecx_slavecount);
+	bool initEtherCAT2(ecx_contextt* ecx_context, int ecx_slavecount);
 	bool step();
 	
+	const struct RobileMasterBatteryProcessDataInput* getProcessDataInput();
+
+	void resetError();
 	void shutdown(int seconds);
 	void startCharge();
 	void stopCharge();
@@ -66,19 +70,26 @@ public:
 	void dock(bool dock);
 	void undock(bool undock);
 	
+	float getVoltage();
+	
 private:
 	ec_slavet* ecx_slaves;
 	int slaveNumber;
 	
+	bool flagResetError;
 	bool flagShutdown;
 	bool robileCharge;
 	bool robileEnablePump;
 	bool robileEnableDock;
-	bool robileEnableUndock;		
+	bool robileEnableUndock;
+
+	bool autoResetError;
 
 	boost::posix_time::ptime pumpStartTime;
 	boost::posix_time::ptime dockStartTime;
 	boost::posix_time::ptime undockStartTime;
+		
+	float voltage;
 };
 
 struct __attribute__((packed)) RobileMasterBatteryProcessDataInput {
@@ -105,10 +116,10 @@ struct __attribute__((packed)) RobileMasterBatteryProcessDataInput {
 };
 
 struct __attribute__((packed)) RobileMasterBatteryProcessDataOutput {
-  uint32_t      Command1;
-  uint32_t      Command2;
-  uint16_t      Shutdown;
-  uint16_t      PwrDeviceId;
+	uint32_t      Command1;
+	uint32_t      Command2;
+	uint16_t      Shutdown;
+	uint16_t      PwrDeviceId;
 };
 
 } // namespace kelp

@@ -1,16 +1,27 @@
-cmake_minimum_required(VERSION 2.8.3)
+cmake_minimum_required(VERSION 3.8)
 project(kelo_tulip)
 
-find_package(catkin REQUIRED COMPONENTS
-	roscpp
-	geometry_msgs
-	nav_msgs
-	sensor_msgs
-	std_msgs
-	tf
-)
+if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+  add_compile_options(-Wall -Wextra -Wpedantic)
+endif()
 
-#set(Boost_USE_STATIC_LIBS ON)
+# find dependencies
+find_package(ament_cmake REQUIRED)
+find_package(ament_index_cpp REQUIRED)
+find_package(rclcpp REQUIRED)
+find_package(std_msgs REQUIRED)
+find_package(sensor_msgs REQUIRED)
+find_package(geometry_msgs REQUIRED)
+find_package(nav_msgs REQUIRED)
+find_package(rosidl_default_generators REQUIRED)
+find_package(tf2 REQUIRED)
+find_package(tf2_ros REQUIRED)
+find_package(tf2_geometry_msgs REQUIRED)
+find_package(kelo_interfaces REQUIRED)
+find_package(rosidl_typesupport_cpp REQUIRED)
+find_library(SOEM_LIBRARIES NAMES soem)
+
+set(Boost_USE_STATIC_LIBS ON)
 find_package(Boost REQUIRED COMPONENTS thread)
 
 if(WIN32)
@@ -32,14 +43,19 @@ else(WIN32)
 	)
 endif(WIN32)
 
-catkin_package(
-	INCLUDE_DIRS ${INCLUDE_DIRS} 
-	LIBRARIES tulip_velocity_controller
-)
-
+include_directories(include)
 include_directories(
 	${INCLUDE_DIRS}
-	${catkin_INCLUDE_DIRS}
+	${rclcpp_INCLUDE_DIRS}
+	${rcl_interfaces_INCLUDE_DIRS}
+	${std_msgs_INCLUDE_DIRS}
+	${kelo_interfaces_INCLUDE_DIRS}
+	${geometry_msgs_INCLUDE_DIRS}
+	${nav_msgs_INCLUDE_DIRS}
+	${sensor_msgs_INCLUDE_DIRS}
+	${tf2_INCLUDE_DIRS}
+	${tf2_ros_INCLUDE_DIRS}
+	${tf2_geometry_msgs_INCLUDE_DIRS}
 )
 
 # Optionally apply cap_net_raw+ep permissions to binary. Requires root previleges.
@@ -58,25 +74,68 @@ add_library(tulip_velocity_controller
 	src/VelocityPlatformController.cpp
 )
 
-target_link_libraries(tulip_velocity_controller
-	${catkin_LIBRARIES}
-	${Boost_LIBRARIES}
-)
-
-add_executable(platform_driver
+add_library(tulip_library
+	src/EtherCATMaster.cpp
 	src/EtherCATModule.cpp
+	src/EtherCATModuleROS.cpp
 	src/PlatformDriver.cpp
 	src/PlatformDriverROS.cpp
 	src/modules/RobileMasterBattery.cpp
+	src/modules/RobileMasterBatteryROS.cpp
+	src/modules/PowerManagementUnit.cpp
+	src/modules/PowerManagementUnitROS.cpp
 )
 
-target_link_libraries(platform_driver
-	tulip_velocity_controller
-	${catkin_LIBRARIES}
-	${Boost_LIBRARIES}
-	soem
-	pthread
+target_link_libraries(tulip_library
+  tulip_velocity_controller
 )
+
+add_executable(platform_driver
+	src/TulipMain.cpp
+	src/PlatformToWheelInverseKinematicsSolver.c
+	src/SmartWheelKinematics.c
+	src/KELORobotKinematics.c
+)
+
+ament_target_dependencies(platform_driver
+  rclcpp
+  std_msgs
+  sensor_msgs
+  geometry_msgs
+  nav_msgs
+  tf2
+  tf2_ros
+  tf2_geometry_msgs
+  kelo_interfaces
+  ament_index_cpp
+	rosidl_typesupport_cpp
+)
+
+ament_target_dependencies(tulip_library
+  rclcpp
+  std_msgs
+  sensor_msgs
+  geometry_msgs
+  nav_msgs
+  tf2
+  tf2_ros
+  tf2_geometry_msgs
+  kelo_interfaces
+)
+
+
+target_link_libraries(platform_driver
+  tulip_library
+  tulip_velocity_controller
+  ${Boost_LIBRARIES}
+  ${SOEM_LIBRARIES}
+  pthread
+  gsl
+  gslcblas
+  m
+)
+
+# include_directories(/opt/ros/humble/include/tf2_geometry_msgs)
 
 IF(USE_SETCAP)
   add_custom_command(TARGET platform_driver POST_BUILD
@@ -84,21 +143,27 @@ IF(USE_SETCAP)
   )
 endif(USE_SETCAP)
 
-install(TARGETS platform_driver
-  ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+install(TARGETS platform_driver tulip_library tulip_velocity_controller
+	ARCHIVE DESTINATION lib
+	LIBRARY DESTINATION lib
+	RUNTIME DESTINATION lib/${PROJECT_NAME}
+)
+
+install(DIRECTORY include/
+	DESTINATION include
 )
 
 install(DIRECTORY include/${PROJECT_NAME}/
-  DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
+	DESTINATION include/${PROJECT_NAME}
+)
+
+install(DIRECTORY
+  launch
+  DESTINATION share/${PROJECT_NAME}
 )
 
 install(DIRECTORY config/
-	DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/config
+DESTINATION share/${PROJECT_NAME}/config
 )
 
-install(DIRECTORY launch/
-	DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/launch
-)
-
+ament_package()

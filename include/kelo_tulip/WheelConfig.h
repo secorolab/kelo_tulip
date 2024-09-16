@@ -45,9 +45,7 @@
 #ifndef WHEELCONFIG_H
 #define WHEELCONFIG_H
 
-#include <vector>
-#include <string>
-#include <iostream>
+#include "kelo_tulip/WheelModel.h"
 
 namespace kelo {
 
@@ -56,9 +54,10 @@ struct WheelConfig {
 	double x;
 	double y;
 	double a;
-	bool critical;
 	bool enable;
 	bool reverseVelocity;
+	
+	WheelModel model;
 };
 
 } // namespace kelp

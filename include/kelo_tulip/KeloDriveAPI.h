@@ -41,9 +41,10 @@
  *
  ******************************************************************************/
 
+#ifndef KELOTULIP_KELODRIVEAPI_H_
+#define KELOTULIP_KELODRIVEAPI_H_
 
 // processdata structures and global user defined types
-
 
 #define STAT1_ENABLED1          0x0001
 #define STAT1_ENABLED2          0x0002
@@ -107,41 +108,39 @@ typedef struct PACKED{
   float			current_in;			// current input
 }txpdo1_t;
 
-/* SMARTWHEEL SETPOINT MODES
-/* 
-/* Mode TORQUE
-/*   Setpoint 1		= Current in Amp for motor 1
-/*   Setpoint 2		= Current in Amp for motor 2
-/*   Upper limit 1 	= Most positive velocity (rad/s) allowed for motor 1
-/*   Lower limit 1  = Most negative velocity (rad/s) allowed for motor 1
-/*   Upper limit 2 	= Most positive velocity (rad/s) allowed for motor 2
-/*   Lower limit 2  = Most negative velocity (rad/s) allowed for motor 2
-/*
-/* Mode DTORQUE
-/*   Setpoint 1		= Common current in Amp
-/*   Setpoint 2		= Differential current in Amp
-/*   Upper limit 1 	= Most positive velocity (rad/s) allowed for linear motion
-/*   Lower limit 1  = Most negative velocity (rad/s) allowed for linear motion
-/*   Upper limit 2 	= Most positive velocity (rad/s) allowed for pivot motion
-/*   Lower limit 2  = Most negative velocity (rad/s) allowed for pivot motion
-/*
-/* Mode VELOCITY
-/*   Setpoint 1		= Velocity in rad/s for motor 1
-/*   Setpoint 2		= Velocity in rad/s for motor 2
-/*   Upper limit 1 	= Most positive current (amp) allowed for motor 1
-/*   Lower limit 1  = Most negative current (amp) allowed for motor 1
-/*   Upper limit 2 	= Most positive current (amp) allowed for motor 2
-/*   Lower limit 2  = Most negative current (amp) allowed for motor 2
-/*
-/* Mode DVELOCITY
-/*   Setpoint 1		= Common velocity in rad/s
-/*   Setpoint 2		= Differential velocity in rad/s
-/*   Upper limit 1 	= Most positive current (amp) allowed for linear motion
-/*   Lower limit 1  = Most negative current (amp) allowed for linear motion
-/*   Upper limit 2 	= Most positive current (amp) allowed for pivot motion
-/*   Lower limit 2  = Most negative current (amp) allowed for pivot motion
-/*
-*/
+// SMARTWHEEL SETPOINT MODES
+// 
+// Mode TORQUE
+//   Setpoint 1		= Current in Amp for motor 1
+//   Setpoint 2		= Current in Amp for motor 2
+//   Upper limit 1 	= Most positive velocity (rad/s) allowed for motor 1
+//   Lower limit 1  = Most negative velocity (rad/s) allowed for motor 1
+//   Upper limit 2 	= Most positive velocity (rad/s) allowed for motor 2
+//   Lower limit 2  = Most negative velocity (rad/s) allowed for motor 2
+//
+// Mode DTORQUE
+//   Setpoint 1		= Common current in Amp
+//   Setpoint 2		= Differential current in Amp
+//   Upper limit 1 	= Most positive velocity (rad/s) allowed for linear motion
+//   Lower limit 1  = Most negative velocity (rad/s) allowed for linear motion
+//   Upper limit 2 	= Most positive velocity (rad/s) allowed for pivot motion
+//   Lower limit 2  = Most negative velocity (rad/s) allowed for pivot motion
+//
+// Mode VELOCITY
+//   Setpoint 1		= Velocity in rad/s for motor 1
+//   Setpoint 2		= Velocity in rad/s for motor 2
+//   Upper limit 1 	= Most positive current (amp) allowed for motor 1
+//   Lower limit 1  = Most negative current (amp) allowed for motor 1
+//   Upper limit 2 	= Most positive current (amp) allowed for motor 2
+//   Lower limit 2  = Most negative current (amp) allowed for motor 2
+//
+// Mode DVELOCITY
+//   Setpoint 1		= Common velocity in rad/s
+//   Setpoint 2		= Differential velocity in rad/s
+//   Upper limit 1 	= Most positive current (amp) allowed for linear motion
+//   Lower limit 1  = Most negative current (amp) allowed for linear motion
+//   Upper limit 2 	= Most positive current (amp) allowed for pivot motion
+//   Lower limit 2  = Most negative current (amp) allowed for pivot motion
 
 #define COM1_ENABLE1          0x0001
 #define COM1_ENABLE2          0x0002
@@ -169,3 +168,4 @@ typedef struct PACKED{
   uint64_t		timestamp;			// EtherCAT timestamp (ns) setpoint execution
 }rxpdo1_t;
 
+#endif // KELOTULIP_KELODRIVEAPI_H_

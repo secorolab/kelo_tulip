@@ -41,28 +41,88 @@
  *
  ******************************************************************************/
 
-#ifndef ETHERCATMODULE_H
-#define ETHERCATMODULE_H
+
+#ifndef KELOTULIP_ETHERCATMASTER_H_
+#define KELOTULIP_ETHERCATMASTER_H_
 
 extern "C" {
 #include "kelo_tulip/soem/ethercattype.h"
+#include "kelo_tulip/EtherCATModule.h"
+
 #include "nicdrv.h"
 #include "kelo_tulip/soem/ethercatbase.h"
 #include "kelo_tulip/soem/ethercatmain.h"
+#include "kelo_tulip/soem/ethercatconfig.h"
+#include "kelo_tulip/soem/ethercatcoe.h"
+#include "kelo_tulip/soem/ethercatdc.h"
+#include "kelo_tulip/soem/ethercatprint.h"
 }
+#include <boost/thread.hpp>
+#include <string>
+#include <fstream>
 
 namespace kelo {
 
-class EtherCATModule {
+class EtherCATMaster {
 public:
-	EtherCATModule();
-	virtual ~EtherCATModule();
+	EtherCATMaster(std::string device, std::vector<EtherCATModule*> modules);
+	virtual ~EtherCATMaster();
+
+	bool initEthercat();
+	void closeEthercat();
+	void pauseEthercat(int ms);
+	void printEthercatStatus();
+	void reconnectSlave(int slave);
+
+	bool hasWkcError();
+	void resetErrorFlags();
+
+protected:
+	void ethercatHandler();
+	void ethercatCheck();
+	std::ofstream logfile;
+	bool canChangeActive;
+	bool showedMessageChangeActive;
+
+	ec_slavet ecx_slave[EC_MAXSLAVE];
+	int ecx_slavecount;
+	ec_groupt ec_group[EC_MAXGROUP];
+	uint8 esibuf[EC_MAXEEPBUF];
+	uint32 esimap[EC_MAXEEPBITMAP];
+	ec_eringt ec_elist;
+	ec_idxstackT ec_idxstack;
+	ec_SMcommtypet ec_SMcommtype;
+	ec_PDOassignt ec_PDOassign;
+	ec_PDOdesct ec_PDOdesc;
+	ec_eepromSMt ec_SM;
+	ec_eepromFMMUt ec_FMMU;
+	boolean EcatError;
+	int64 ec_DCtime;			   
+	ecx_portt ecx_port;
+	ecx_redportt ecx_redport;
+	ecx_contextt ecx_context;
+	int expectedWKC;
+	volatile int wkc;
+	bool inOP = false;
 	
-	virtual bool initEtherCAT(ec_slavet* ecx_slaves, int ecx_slavecount) = 0;
-	virtual bool initEtherCAT2(ecx_contextt* ecx_context, int ecx_slavecount) = 0;
-	virtual bool step() = 0;
+	std::vector<EtherCATModule*> modules;
+
+	char IOmap[4096];
+	std::string device;
+	bool ethercatInitialized;
+	boost::thread* ethercatThread;
+	boost::thread* ethercatCheckThread;
+	volatile bool stopThread;
+	volatile int threadPhase;
+	volatile int pauseThreadMs;
+
+	volatile bool ethercatWkcError;
+	volatile bool flagReconnectSlave;
+
+private:
+	EtherCATMaster(const EtherCATMaster&);
 };
 
-} // namespace kelp
+} //namespace kelo
 
-#endif // ETHERCATMODULE_H
+#endif //KELOTULIP_ETHERCATMASTER

@@ -52,6 +52,19 @@
 #include <boost/thread.hpp>
 #include <iostream>
 
+extern "C" {
+#include <kelo_tulip/KELORobotKinematics.h>
+#include <kelo_tulip/PlatformToWheelInverseKinematicsSolver.h>
+#include <kelo_tulip/SmartWheelKinematics.h>
+#include <gsl/gsl_matrix_double.h>
+#include <gsl/gsl_matrix.h>
+#include <gsl/gsl_blas.h>
+#include <gsl/gsl_sf_trig.h>
+#include <gsl/gsl_linalg.h>
+#include <gsl/gsl_vector_double.h>
+#include <gsl/gsl_multifit.h>
+}
+
 namespace kelo
 {
 
@@ -65,11 +78,29 @@ namespace kelo
 
             void initialise(const std::vector<WheelConfig>& wheel_configs);
 
-            void setPlatformMaxVelocity(float max_vel_linear, float max_vel_angular);
-            void setPlatformMaxAcceleration(float max_acc_linear, float max_acc_angular);
-            void setPlatformMaxDeceleration(float max_dec_linear, float max_dec_angular);
+            void setPlatformMaxLinVelocity(float max_vel_linear);
+            void setPlatformMaxAngVelocity(float max_vel_angular);
+            void setPlatformMaxLinAcceleration(float max_acc_linear);
+            void setPlatformMaxAngAcceleration(float max_acc_angular);
+            void setPlatformMaxLinDeceleration(float max_dec_linear);
+            void setPlatformMaxAngDeceleration(float max_dec_angular);
             
             void calculatePlatformRampedVelocities();
+
+            void calculateWheelTargetTorques(double *wheel_torques,
+                                            double *pivot_angles,
+                                            double *wheel_coordinates,
+                                            double *pivot_angles_deviation,
+                                            double *measured_platform_velocity,
+                                            double *platform_damping_parameters,
+                                            const gsl_matrix *K,
+                                            const gsl_matrix *W,
+                                            const unsigned int M,
+                                            const unsigned int N);
+
+            void getPivotError(const size_t &wheel_index,
+                                const float &raw_pivot_angle,
+                                float &pivot_error);
 
             void calculateWheelTargetVelocity(const size_t &wheel_index,
                                               const float &pivot_angle,

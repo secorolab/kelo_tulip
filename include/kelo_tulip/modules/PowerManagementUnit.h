@@ -41,28 +41,52 @@
  *
  ******************************************************************************/
 
-#ifndef ETHERCATMODULE_H
-#define ETHERCATMODULE_H
 
-extern "C" {
-#include "kelo_tulip/soem/ethercattype.h"
-#include "nicdrv.h"
-#include "kelo_tulip/soem/ethercatbase.h"
-#include "kelo_tulip/soem/ethercatmain.h"
-}
+#ifndef MODULES_POWERMANAGEMENTUNIT_H
+#define MODULES_POWERMANAGEMENTUNIT_H
+
+#include "kelo_tulip/EtherCATModule.h"
+#include <boost/thread.hpp>
 
 namespace kelo {
 
-class EtherCATModule {
+class PowerManagementUnit : public EtherCATModule {
 public:
-	EtherCATModule();
-	virtual ~EtherCATModule();
+	PowerManagementUnit(int slaveNumber);
+	virtual ~PowerManagementUnit();
 	
-	virtual bool initEtherCAT(ec_slavet* ecx_slaves, int ecx_slavecount) = 0;
-	virtual bool initEtherCAT2(ecx_contextt* ecx_context, int ecx_slavecount) = 0;
-	virtual bool step() = 0;
+	bool initEtherCAT(ec_slavet* ecx_slaves, int ecx_slavecount);
+	bool initEtherCAT2(ecx_contextt* ecx_context, int ecx_slavecount);
+	bool step();
+	
+	const struct PowerManagementUnitProcessDataInput* getProcessDataInput();
+
+	void shutdown(int seconds);
+	
+private:
+	ec_slavet* ecx_slaves;
+	int slaveNumber;
+	uint16_t status;
+	float current;
+	float voltage;
+	float power;
+};
+
+struct __attribute__((packed)) PowerManagementUnitProcessDataInput {
+	uint16_t STATUS;     	 	 // Status bits
+	uint64_t TIME_STAMP;  	 	 // EtherCAT timestamp ms
+	float    CURRENT;  // Total current consumption
+	float    VOLTAGE;  // System Voltage
+	float    POWER;    // Total power consumption of the system
+	float    PARAM1; // Generic data, might be used for different purposes
+	uint32_t  PARAM2;	 // Generic data, might be used for different purposes
+};
+
+struct __attribute__((packed)) PowerManagementUnitProcessDataOutput {
+	uint16_t      SHUTDOWN;
+	uint32_t      COMMAND;
 };
 
 } // namespace kelp
 
-#endif // ETHERCATMODULE_H
+#endif // MODULES_POWERMANAGEMENTUNIT_H

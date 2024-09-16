@@ -80,8 +80,7 @@ enum DriverState {
 	DRIVER_STATE_ACTIVE = 0x01,
 	DRIVER_STATE_READY = 0x02,
 	DRIVER_STATE_INIT = 0x04,
-	DRIVER_STATE_ERROR = 0x10,
-	DRIVER_STATE_TIMEOUT = 0x20
+	DRIVER_STATE_ERROR = 0x10
 };
 
 enum DriverError {
@@ -93,25 +92,31 @@ enum DriverError {
 	DRIVER_ERROR_SLIP = 0x2000
 };
 
-class PlatformDriver {
+class PlatformDriver : public EtherCATModule {
 public:
-	PlatformDriver(std::string device, std::vector<EtherCATModule*> modules,
-		std::vector<WheelConfig>* wheelConfigs, std::vector<WheelData>* wheelData, int firstWheel, int nWheels);
+	PlatformDriver(const std::vector<WheelConfig>& wheelConfigs, const std::vector<WheelData>& wheelData);
 	virtual ~PlatformDriver();
 
-	bool initEthercat();
-	void closeEthercat();
-	void pauseEthercat(int ms);
-	void printEthercatStatus();
-	void reconnectSlave(int slave);
+	virtual bool initEtherCAT2(ecx_contextt* ecx_context, int ecx_slavecount); 
 
-	txpdo1_t* getProcessData(int slave);
-	void setProcessData(int slave, rxpdo1_t* data);
+	virtual bool initEtherCAT(ec_slavet* ecx_slaves, int ecx_slavecount);
+	virtual bool step();
+	
+	virtual bool stepInit();
+	virtual bool stepReady();
+	virtual bool stepActive();
+	virtual bool stepError();
 
 	void setTargetVelocity(double vx, double vy, double va);
 
-	void setWheelDistance(double x);
-	void setWheelDiameter(double x);
+	txpdo1_t* getWheelProcessData(unsigned int wheel);
+	void setWheelProcessData(unsigned int wheel, rxpdo1_t* data);
+
+	void reconnectSlave(int slave);
+
+	void setPlatformDampingParameters(double *damping_parameters);
+	void setControlMode(std::string &base_control_mode);
+
 	void setCurrentStop(double x);
 	void setCurrentDrive(double x);
 	double getCurrentDrive();
@@ -125,6 +130,8 @@ public:
 	void setMaxvlinacc(double x);
 	void setMaxangleacc(double x);
 	void setMaxvaacc(double x);
+	void setMaxvlindec(double x);	
+	void setMaxvadec(double x);
 	void setFactorAngleaccVlin(double x);
 	void setFractionVelTolerance(double x);
 	void setFractionFactor(double x);
@@ -139,50 +146,33 @@ public:
 	int getDriverStatus();
 
 	void resetErrorFlags();
+	void setWheelsEnable(std::vector<int> values);
 
 	std::vector<double> getEncoderValue(int idx);
+
+	void SetState(int wheel, uint16_t state);
 		
 protected:
-	void ethercatHandler();
 	int checkSmartwheelTimestamp();
 	void updateEncoders();
 	void updateSetpoints();
-	void doStop();
-	void doControl();
-	void updateStatusError();
+	virtual void doStop();
+	virtual void doControl();
+
+	bool hasWheelStatusEnabled(unsigned int wheel);
+	bool hasWheelStatusError(unsigned int wheel);
+	virtual void updateStatusError();
 
 	volatile DriverState state;
 	std::ofstream logfile;
 	bool canChangeActive;
 	bool showedMessageChangeActive;
+	int stepCount;
 
-	ec_slavet ecx_slave[EC_MAXSLAVE];
-	int ecx_slavecount;
-	ec_groupt ec_group[EC_MAXGROUP];
-	uint8 esibuf[EC_MAXEEPBUF];
-	uint32 esimap[EC_MAXEEPBITMAP];
-	ec_eringt ec_elist;
-	ec_idxstackT ec_idxstack;
-	ec_SMcommtypet ec_SMcommtype;
-	ec_PDOassignt ec_PDOassign;
-	ec_PDOdesct ec_PDOdesc;
-	ec_eepromSMt ec_SM;
-	ec_eepromFMMUt ec_FMMU;
-	boolean EcatError;
-	int64 ec_DCtime;			   
-	ecx_portt ecx_port;
-	ecx_redportt ecx_redport;
-	ecx_contextt ecx_context;
+	ec_slavet* ecx_slaves;
+	ecx_contextt* ecx_contextp;
 	
 	std::vector<EtherCATModule*> modules;
-
-	char IOmap[4096];
-	std::string device;
-	bool ethercatInitialized;
-	boost::thread* ethercatThread;
-	volatile bool stopThread;
-	volatile int threadPhase;
-	volatile int pauseThreadMs;
 
 	std::vector<txpdo1_t> processData;
 	std::vector<txpdo1_t> lastProcessData;
@@ -196,19 +186,22 @@ protected:
 	bool encoderInitialized;
 	volatile bool ethercatWkcError;
 	volatile bool flagReconnectSlave;
+	std::vector<bool> wheelEnabled;
 
 	int firstWheel, nWheels;
-	std::vector<WheelConfig>* wheelConfigs;
-	std::vector<WheelData>* wheelData;
-
-	double wheelDistance;
-	double wheelDiameter;
+	std::vector<WheelConfig> wheelConfigs;
+	std::vector<WheelData> wheelData;
 	
+	double motor_constant;
 	double maxCalibrationTime;
 	double vCalibration;
 	double currentCalibration;
 	double currentStop;
 	double currentDrive;
+
+	double measured_platform_velocity[3];
+	double platform_damping_parameters[3];
+	std::string platform_control_mode;
 
 	double maxvlin;
 	double maxva;
@@ -218,6 +211,8 @@ protected:
 
 	double wheelsetpointmin;
 	double wheelsetpointmax;
+	double torque_wheelsetpointmin;
+	double torque_wheelsetpointmax;	
 
 	volatile bool statusError;
 	volatile bool slipError;

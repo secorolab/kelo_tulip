@@ -41,28 +41,22 @@
  *
  ******************************************************************************/
 
-#ifndef ETHERCATMODULE_H
-#define ETHERCATMODULE_H
+#include "kelo_tulip/EtherCATModuleROS.h"
 
-extern "C" {
-#include "kelo_tulip/soem/ethercattype.h"
-#include "nicdrv.h"
-#include "kelo_tulip/soem/ethercatbase.h"
-#include "kelo_tulip/soem/ethercatmain.h"
-}
+namespace kelo
+{
 
-namespace kelo {
+	EtherCATModuleROS::EtherCATModuleROS() : rclcpp::Node("ethercat_module_ros")
+	{
+	}
 
-class EtherCATModule {
-public:
-	EtherCATModule();
-	virtual ~EtherCATModule();
-	
-	virtual bool initEtherCAT(ec_slavet* ecx_slaves, int ecx_slavecount) = 0;
-	virtual bool initEtherCAT2(ecx_contextt* ecx_context, int ecx_slavecount) = 0;
-	virtual bool step() = 0;
-};
+	EtherCATModuleROS::~EtherCATModuleROS()
+	{
+	}
 
-} // namespace kelp
+	bool EtherCATModuleROS::step()
+	{
+		return true;
+	}
 
-#endif // ETHERCATMODULE_H
+} // namespace kelo

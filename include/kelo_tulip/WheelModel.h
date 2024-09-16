@@ -41,28 +41,39 @@
  *
  ******************************************************************************/
 
-#ifndef ETHERCATMODULE_H
-#define ETHERCATMODULE_H
 
-extern "C" {
-#include "kelo_tulip/soem/ethercattype.h"
-#include "nicdrv.h"
-#include "kelo_tulip/soem/ethercatbase.h"
-#include "kelo_tulip/soem/ethercatmain.h"
-}
+#ifndef WHEELMODEL_H
+#define WHEELMODEL_H
+
+#include <vector>
+#include <string>
 
 namespace kelo {
 
-class EtherCATModule {
-public:
-	EtherCATModule();
-	virtual ~EtherCATModule();
+struct WheelModel {
+	std::string name;
+	bool active;             // actively controlled or passive
+	double diameter;
+	double width;
+	double casteroffset;
+	double wheeldistance;    // [m] distance between centers of both hubwheels
+	bool canPivot;
+	double velocitylimit;    // [rad/s] for one hubwheel
+	double currentlimit;
 	
-	virtual bool initEtherCAT(ec_slavet* ecx_slaves, int ecx_slavecount) = 0;
-	virtual bool initEtherCAT2(ecx_contextt* ecx_context, int ecx_slavecount) = 0;
-	virtual bool step() = 0;
+	WheelModel() {
+		name = "KELOdrive105";
+		active = true;
+		diameter = 0.105;
+		width = 0.040;
+		casteroffset = 0.010;
+		wheeldistance = 0.080;
+		canPivot = true;
+		velocitylimit = 100.0;
+		currentlimit = 10.0;
+	}
 };
 
 } // namespace kelp
 
-#endif // ETHERCATMODULE_H
+#endif // WHEELMODEL_H
