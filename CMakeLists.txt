@@ -19,7 +19,7 @@ find_package(tf2_ros REQUIRED)
 find_package(tf2_geometry_msgs REQUIRED)
 find_package(kelo_interfaces REQUIRED)
 find_package(rosidl_typesupport_cpp REQUIRED)
-find_library(SOEM_LIBRARIES NAMES soem)
+# find_library(SOEM_LIBRARIES NAMES soem)
 
 set(Boost_USE_STATIC_LIBS ON)
 find_package(Boost REQUIRED COMPONENTS thread)
@@ -128,7 +128,8 @@ target_link_libraries(platform_driver
   tulip_library
   tulip_velocity_controller
   ${Boost_LIBRARIES}
-  ${SOEM_LIBRARIES}
+  soem
+#   ${SOEM_LIBRARIES}
   pthread
   gsl
   gslcblas
