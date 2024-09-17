@@ -18,7 +18,6 @@ find_package(tf2 REQUIRED)
 find_package(tf2_ros REQUIRED)
 find_package(tf2_geometry_msgs REQUIRED)
 find_package(kelo_interfaces REQUIRED)
-find_package(rosidl_typesupport_cpp REQUIRED)
 # find_library(SOEM_LIBRARIES NAMES soem)
 
 set(Boost_USE_STATIC_LIBS ON)
@@ -108,7 +107,6 @@ ament_target_dependencies(platform_driver
   tf2_geometry_msgs
   kelo_interfaces
   ament_index_cpp
-	rosidl_typesupport_cpp
 )
 
 ament_target_dependencies(tulip_library
@@ -134,6 +132,8 @@ target_link_libraries(platform_driver
   gsl
   gslcblas
   m
+#   kelo_interfaces
+  ${kelo_interfaces_LIBRARIES}
 )
 
 # include_directories(/opt/ros/humble/include/tf2_geometry_msgs)

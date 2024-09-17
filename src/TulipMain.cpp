@@ -48,7 +48,7 @@
 #include <rclcpp/rclcpp.hpp>
 
 // create and configure one module
-kelo::EtherCATModuleROS *createModule(std::shared_ptr<rclcpp::Node> node, std::string moduleType, std::string moduleName, std::string configTag)
+kelo::EtherCATModuleROS *createModule(std::shared_ptr<rclcpp::Node> node, std::string &moduleType, std::string &moduleName, std::string &configTag)
 {
 	kelo::EtherCATModuleROS *module = nullptr;
 
@@ -94,41 +94,49 @@ public:
 	{
 		std::vector<kelo::EtherCATModuleROS *> rosModules;
 
-		this->declare_parameter<std::vector<std::string>>(
-				"modules", std::vector<std::string>{});
+		std::string configModulesTag = "modules";
+		std::string moduleType;
 
-		// Retrieve the list of module names from the parameter server
-		std::vector<std::string> moduleNames;
-		if (this->get_parameter("modules", moduleNames))
+		// list of modules to be created
+
+		std::string platform_driver_module_name = "platform_driver";
+		std::string power_management_unit_module_name = "power_management_unit";
+
+		this->declare_parameter("modules.platform_driver.type", rclcpp::ParameterType::PARAMETER_STRING);
+		this->declare_parameter("modules.power_management_unit.type", rclcpp::ParameterType::PARAMETER_STRING);
+
+
+		if (!this->get_parameter("modules." + platform_driver_module_name + ".type", moduleType))
 		{
-			// For each module, retrieve its configuration
-			for (const std::string &moduleName : moduleNames)
-			{
-				std::string moduleType;
-				if (!this->get_parameter("modules." + moduleName + ".type", moduleType))
-				{
-					RCLCPP_ERROR(this->get_logger(), "Error: configuration for module '%s' is missing 'type' field.", moduleName.c_str());
-					rclcpp::shutdown();
-					return;
-				}
-
-				std::string configTag = "modules." + moduleName + ".";
-				kelo::EtherCATModuleROS *module = createModule(moduleType, moduleName, configTag);
-
-				if (!module)
-				{
-					RCLCPP_ERROR(this->get_logger(), "Error creating module: '%s'", moduleName.c_str());
-					rclcpp::shutdown();
-					return;
-				}
-
-				// Push the created module to the list
-				rosModules.push_back(module);
-			}
+			RCLCPP_ERROR(this->get_logger(), "Missing 'modules.%s.type' parameter", platform_driver_module_name.c_str());
+			return;
 		}
-		else
+		RCLCPP_INFO(this->get_logger(), "Type of platform_driver_module_name: %s", moduleType.c_str());
+
+		std::string configTag = configModulesTag+"." + platform_driver_module_name + ".";
+		kelo::EtherCATModuleROS *module = createModule(moduleType, platform_driver_module_name, configTag);
+		if (module)
 		{
-			RCLCPP_ERROR(this->get_logger(), "Failed to retrieve 'modules' parameter.");
+			rosModules.push_back(module);
+		}
+
+		if (!this->get_parameter("modules." + power_management_unit_module_name + ".type", moduleType))
+		{
+			RCLCPP_ERROR(this->get_logger(), "Missing 'modules.%s.type' parameter", power_management_unit_module_name.c_str());
+			return;
+		}
+		RCLCPP_INFO(this->get_logger(), "Type of power_management_unit_module_name: %s", moduleType.c_str());
+
+		configTag = configModulesTag+"." + power_management_unit_module_name + ".";
+		module = createModule(moduleType, power_management_unit_module_name, configTag);
+		if (module)
+		{
+			rosModules.push_back(module);
+		}
+
+		if (rosModules.empty())
+		{
+			RCLCPP_ERROR(this->get_logger(), "No valid modules were created. Shutting down.");
 			rclcpp::shutdown();
 			return;
 		}
@@ -168,7 +176,7 @@ public:
 		}
 
 		double delayRetry =
-				this->declare_parameter<double>("start_retry_delay", 1.0);
+			this->declare_parameter<double>("start_retry_delay", 1.0);
 		int maxRetries = this->declare_parameter<int>("max_retries", 5);
 
 		kelo::EtherCATMaster *master = new kelo::EtherCATMaster(device, etherCATmodules);
@@ -220,7 +228,7 @@ public:
 
 private:
 	// Replace NodeHandle with 'this' since PlatformDriver is the node
-	kelo::EtherCATModuleROS *createModule(std::string moduleType, std::string moduleName, std::string configTag)
+	kelo::EtherCATModuleROS *createModule(const std::string &moduleType, const std::string &moduleName, const std::string &configTag)
 	{
 		kelo::EtherCATModuleROS *module = nullptr;
 

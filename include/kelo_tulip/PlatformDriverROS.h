@@ -124,18 +124,6 @@ protected:
 	//rclcpp::Publisher<std_msgs::msg::Int32MultiArray>::SharedPtr timestampPublisher;
 	rclcpp::Publisher<std_msgs::msg::Int32>::SharedPtr statusPublisher;
 
-
-	// ros::Publisher batteryPublisher;
-	// ros::Publisher imuPublisher;
-	// ros::Publisher processDataInputPublisher;
-	// ros::Publisher odomPublisher;
-	// ros::Publisher odomInitializedPublisher;
-	// ros::Publisher mileagePublisher;
-	// //ros::Publisher valuesPublisher;
-	// ros::Publisher errorPublisher;
-	// //ros::Publisher timestampPublisher;
-	// ros::Publisher statusPublisher;
-
 	std::shared_ptr<tf2_ros::TransformBroadcaster> odom_broadcaster;
 
     rclcpp::Subscription<sensor_msgs::msg::Joy>::SharedPtr joySubscriber;

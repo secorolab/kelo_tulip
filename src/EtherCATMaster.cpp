@@ -110,7 +110,7 @@ namespace kelo
 		int wkc2 = ecx_config_init(&ecx_context, TRUE);
 		if (!wkc2)
 		{
-			RCLCPP_ERROR(rclcpp::get_logger("rclcpp"), "No slaves found on %s", device.c_str());
+			RCLCPP_ERROR(rclcpp::get_logger("rclcpp"), "No EtherCAT slaves found on %s", device.c_str());
 			return false;
 		}
 

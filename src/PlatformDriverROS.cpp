@@ -42,6 +42,7 @@
  ******************************************************************************/
 
 #include "kelo_tulip/PlatformDriverROS.h"
+#include "kelo_tulip/modules/RobileMasterBatteryROS.h"
 #include "kelo_tulip/modules/RobileMasterBattery.h"
 #include <tf2/LinearMath/Quaternion.h>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
@@ -81,8 +82,9 @@ namespace kelo
 	bool PlatformDriverROS::init(const std::string &configPrefix)
 	{
 		// declare wheel parameters
+		this->declare_parameter("num_wheels", rclcpp::ParameterType::PARAMETER_INTEGER);
 		this->get_parameter("num_wheels", nWheels);
-		std::cout << "Number of wheels: " << nWheels << std::endl;
+		RCLCPP_INFO_STREAM(this->get_logger(), "Number of wheels: " << nWheels);
 
 		if (nWheels == 0)
 		{
@@ -103,50 +105,81 @@ namespace kelo
 
 		// set driver control parameters
 		double x;
+		this->declare_parameter("current_stop", rclcpp::ParameterType::PARAMETER_DOUBLE);
 		if (this->get_parameter("current_stop", x))
 			driver->setCurrentStop(x);
+
+		this->declare_parameter("current_drive", rclcpp::ParameterType::PARAMETER_DOUBLE);
 		if (this->get_parameter("current_drive", x))
 			driver->setCurrentDrive(x);
 
+		this->declare_parameter("vlin_max", rclcpp::ParameterType::PARAMETER_DOUBLE);
 		if (this->get_parameter("vlin_max", x))
 			driver->setMaxvlin(x);
+
+		this->declare_parameter("va_max", rclcpp::ParameterType::PARAMETER_DOUBLE);
 		if (this->get_parameter("va_max", x))
 			driver->setMaxva(x);
+
+		this->declare_parameter("vlin_acc_max", rclcpp::ParameterType::PARAMETER_DOUBLE);
 		if (this->get_parameter("vlin_acc_max", x))
 			driver->setMaxvlinacc(x);
+
+		this->declare_parameter("vlin_dec_max", rclcpp::ParameterType::PARAMETER_DOUBLE);
 		if (this->get_parameter("vlin_dec_max", x))
 			driver->setMaxvlindec(x);
+
+		this->declare_parameter("angle_acc_max", rclcpp::ParameterType::PARAMETER_DOUBLE);
 		if (this->get_parameter("angle_acc_max", x))
 			driver->setMaxangleacc(x);
+
+		this->declare_parameter("angle_dec_max", rclcpp::ParameterType::PARAMETER_DOUBLE);
 		if (this->get_parameter("va_acc_max", x))
 			driver->setMaxvaacc(x);
+
+		this->declare_parameter("va_acc_max", rclcpp::ParameterType::PARAMETER_DOUBLE);
 		if (this->get_parameter("va_dec_max", x))
 			driver->setMaxvadec(x);
 
 		// get and set damping parameters
 		double damping_parameters[3];
+		this->declare_parameter("platform_Kd_x", rclcpp::ParameterType::PARAMETER_DOUBLE);
 		this->get_parameter("platform_Kd_x", damping_parameters[0]);
+
+		this->declare_parameter("platform_Kd_y", rclcpp::ParameterType::PARAMETER_DOUBLE);
 		this->get_parameter("platform_Kd_y", damping_parameters[1]);
+
+		this->declare_parameter("platform_Kd_a", rclcpp::ParameterType::PARAMETER_DOUBLE);
 		this->get_parameter("platform_Kd_a", damping_parameters[2]);
 
 		driver->setPlatformDampingParameters(damping_parameters);
 
 		joyVlinMax = driver->getMaxvlin();
 		joyVaMax = driver->getMaxva();
+
+		this->declare_parameter("joy_vlin_max", rclcpp::ParameterType::PARAMETER_DOUBLE);
 		if (this->get_parameter("joy_vlin_max", x))
 			joyVlinMax = x;
+
+		this->declare_parameter("joy_va_max", rclcpp::ParameterType::PARAMETER_DOUBLE);
 		if (this->get_parameter("joy_va_max", x))
 			joyVaMax = x;
+
+		this->declare_parameter("joy_scale", rclcpp::ParameterType::PARAMETER_DOUBLE);
 		if (this->get_parameter("joy_scale", x))
 			if (x > 0 && x <= 1.0)
 				joyScale = x;
 
 		bool b;
+
+		this->declare_parameter("use_joy", rclcpp::ParameterType::PARAMETER_BOOL);
 		if (this->get_parameter("active_by_joypad", b))
 			activeByJoypad = b;
 		if (!activeByJoypad)
 			driver->setCanChangeActive();
 
+
+		this->declare_parameter("current_max", rclcpp::ParameterType::PARAMETER_DOUBLE);
 		if (this->get_parameter("current_max", x))
 			currentMax = x;
 
@@ -619,8 +652,4 @@ namespace kelo
 		driver->setWheelsEnable(msg.data);
 	}
 
-	std::string getType()
-	{
-		return "platform_driver";
-	}
 } // namespace kelo

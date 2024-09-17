@@ -2,7 +2,7 @@ platform_driver:
   ros__parameters:
   
     num_wheels: 4
-    device: enp2s0
+    device: eno2
 
     #vlin_max: 1.2  # m / s
     #va_max: 1.1  # rad / s
@@ -29,22 +29,22 @@ platform_driver:
       ethercat_number: 3
       x: 0.195
       y: 0.21
-      a: 0
+      a: 0.0
 
     wheel1:
       ethercat_number: 4
       x: -0.195
       y: 0.21
-      a: 0
+      a: 0.0
 
     wheel2:
       ethercat_number: 6
       x: -0.195
       y: -0.21
-      a: 0
+      a: 0.0
 
     wheel3:
       ethercat_number: 7
       x: 0.195
       y: -0.21
-      a: 0
+      a: 0.0
