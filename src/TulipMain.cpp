@@ -47,50 +47,14 @@
 #include "kelo_tulip/modules/RobileMasterBatteryROS.h"
 #include <rclcpp/rclcpp.hpp>
 
-// create and configure one module
-kelo::EtherCATModuleROS *createModule(std::shared_ptr<rclcpp::Node> node, std::string &moduleType, std::string &moduleName, std::string &configTag)
-{
-	kelo::EtherCATModuleROS *module = nullptr;
-
-	if (moduleType == "robile_master_battery")
-	{
-		module = new kelo::RobileMasterBatteryROS();
-	}
-	else if (moduleType == "platform_driver")
-	{
-		module = new kelo::PlatformDriverROS();
-	}
-	else if (moduleType == "power_management_unit")
-	{
-		module = new kelo::PowerManagementUnitROS();
-	}
-	else
-	{
-		RCLCPP_ERROR(node->get_logger(), "Unknown module type: %s", moduleType.c_str());
-		return nullptr;
-	}
-
-	if (!module)
-	{
-		RCLCPP_ERROR(node->get_logger(), "Module %s could not be created.", moduleName.c_str());
-		return nullptr;
-	}
-
-	// Initialize module, and if initialization fails, delete it
-	if (!module->init(configTag))
-	{
-		RCLCPP_ERROR(node->get_logger(), "Failed to initialize module %s.", moduleName.c_str());
-		delete module;
-		return nullptr;
-	}
-
-	return module;
-}
-
 class PlatformDriver : public rclcpp::Node
 {
 public:
 	PlatformDriver() : Node("platform_driver")
+	{
+	}
+
+	void initializeModules()
 	{
 		std::vector<kelo::EtherCATModuleROS *> rosModules;
 
@@ -102,9 +66,8 @@ public:
 		std::string platform_driver_module_name = "platform_driver";
 		std::string power_management_unit_module_name = "power_management_unit";
 
-		this->declare_parameter("modules.platform_driver.type", rclcpp::ParameterType::PARAMETER_STRING);
-		this->declare_parameter("modules.power_management_unit.type", rclcpp::ParameterType::PARAMETER_STRING);
-
+		this->declare_parameter("modules." + platform_driver_module_name + ".type", rclcpp::ParameterType::PARAMETER_STRING);
+		this->declare_parameter("modules." + power_management_unit_module_name + ".type", rclcpp::ParameterType::PARAMETER_STRING);
 
 		if (!this->get_parameter("modules." + platform_driver_module_name + ".type", moduleType))
 		{
@@ -113,7 +76,7 @@ public:
 		}
 		RCLCPP_INFO(this->get_logger(), "Type of platform_driver_module_name: %s", moduleType.c_str());
 
-		std::string configTag = configModulesTag+"." + platform_driver_module_name + ".";
+		std::string configTag = configModulesTag + "." + platform_driver_module_name + ".";
 		kelo::EtherCATModuleROS *module = createModule(moduleType, platform_driver_module_name, configTag);
 		if (module)
 		{
@@ -127,7 +90,7 @@ public:
 		}
 		RCLCPP_INFO(this->get_logger(), "Type of power_management_unit_module_name: %s", moduleType.c_str());
 
-		configTag = configModulesTag+"." + power_management_unit_module_name + ".";
+		configTag = configModulesTag + "." + power_management_unit_module_name + ".";
 		module = createModule(moduleType, power_management_unit_module_name, configTag);
 		if (module)
 		{
@@ -146,7 +109,7 @@ public:
 
 		if (robileMasterBatteryEthercatNumber > 0)
 		{
-			kelo::EtherCATModuleROS *module = new kelo::RobileMasterBatteryROS();
+			kelo::EtherCATModuleROS *module = new kelo::RobileMasterBatteryROS(this->shared_from_this());
 
 			// Assuming the `init` function needs a node interface. Pass "this" (the current node).
 			if (!module || !module->init(""))
@@ -207,9 +170,10 @@ public:
 		executor.add_node(this->get_node_base_interface());
 
 		// ROS2 main loop (use an executor)
-		rclcpp::Rate rate(20.0); // 20 Hz
+		rclcpp::Rate rate(100.0); // 20 Hz
 		while (rclcpp::ok())
 		{
+			executor.spin_some();
 			for (size_t i = 0; i < rosModules.size(); i++)
 			{
 				rosModules[i]->step();
@@ -227,22 +191,22 @@ public:
 	}
 
 private:
-	// Replace NodeHandle with 'this' since PlatformDriver is the node
+
 	kelo::EtherCATModuleROS *createModule(const std::string &moduleType, const std::string &moduleName, const std::string &configTag)
 	{
 		kelo::EtherCATModuleROS *module = nullptr;
 
 		if (moduleType == "robile_master_battery")
 		{
-			module = new kelo::RobileMasterBatteryROS();
+			module = new kelo::RobileMasterBatteryROS(this->shared_from_this());
 		}
 		else if (moduleType == "platform_driver")
 		{
-			module = new kelo::PlatformDriverROS();
+			module = new kelo::PlatformDriverROS(this->shared_from_this());
 		}
 		else if (moduleType == "power_management_unit")
 		{
-			module = new kelo::PowerManagementUnitROS();
+			module = new kelo::PowerManagementUnitROS(this->shared_from_this());
 		}
 		else
 		{
@@ -272,6 +236,8 @@ int main(int argc, char **argv)
 	rclcpp::init(argc, argv);
 
 	auto platform_driver_node = std::make_shared<PlatformDriver>();
+
+	platform_driver_node->initializeModules();
 
 	rclcpp::spin(platform_driver_node);
 

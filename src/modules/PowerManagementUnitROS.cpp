@@ -48,11 +48,10 @@
 namespace kelo
 {
 
-	PowerManagementUnitROS::PowerManagementUnitROS()
-		: EtherCATModuleROS(),
+	PowerManagementUnitROS::PowerManagementUnitROS(std::shared_ptr<rclcpp::Node> node)
+		: EtherCATModuleROS(node), // Pass the shared node pointer to the base class
 		  pmu(nullptr)
 	{
-		// Constructor code (if any additional initialization is needed)
 	}
 
 	PowerManagementUnitROS::~PowerManagementUnitROS()
@@ -62,11 +61,12 @@ namespace kelo
 	bool PowerManagementUnitROS::init(const std::string &configPrefix)
 	{
 		// get EtherCAT slave number
-		int ethercatNumber = this->rclcpp::Node::declare_parameter<int>(configPrefix + "ethercat_number", 0);
+		int ethercatNumber = node_->declare_parameter<int>(configPrefix + "ethercat_number", 0);
+
 
 		if (ethercatNumber <= 0)
 		{
-			RCLCPP_ERROR(this->get_logger(), "EtherCAT number for power management unit not set.");
+			RCLCPP_ERROR(node_->get_logger(), "EtherCAT number for power management unit not set.");
 			return false;
 		}
 
@@ -74,7 +74,7 @@ namespace kelo
 		pmu = new PowerManagementUnit(ethercatNumber);
 		if (!pmu)
 		{
-			RCLCPP_ERROR(this->get_logger(), "Failed to create PowerManagementUnit.");
+			RCLCPP_ERROR(node_->get_logger(), "Failed to create PowerManagementUnit.");
 			return false;
 		}
 

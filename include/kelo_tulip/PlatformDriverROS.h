@@ -64,7 +64,7 @@ namespace kelo {
 class PlatformDriverROS : public EtherCATModuleROS {
 public:
 	//! Default constructor.
-	PlatformDriverROS();
+    PlatformDriverROS(std::shared_ptr<rclcpp::Node> node);
 	
 	//! Default destructor.
 	virtual ~PlatformDriverROS();

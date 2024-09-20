@@ -55,22 +55,23 @@
 namespace kelo
 {
 
-	PlatformDriverROS::PlatformDriverROS()
-		: EtherCATModuleROS(), driver(nullptr),
+	PlatformDriverROS::PlatformDriverROS(std::shared_ptr<rclcpp::Node> node)
+		: EtherCATModuleROS(node), driver(nullptr),
 		  useJoy(false), debugMode(false), activeByJoypad(false), currentMax(20.0),
 		  joyVlinMax(1.0), joyVaMax(1.0), joyScale(1.0), odomx(0.0), odomy(0.0), odoma(0.0)
 	{
-
 		s_w = 0.01;	  // caster offset of a smartWheel
 		d_w = 0.0775; // distance between the left and the right wheel
 		s_d_ratio = s_w / d_w;
 		r_w = 0.0524; // the radius of the wheel
 
 		nWheels = 0;
-		base_control_mode = "VELOCITY_CONTROL";
+		base_control_mode = "";
+
+		node_->declare_parameter("/base_control_mode", rclcpp::ParameterType::PARAMETER_STRING);
 
 		// Initialize transform broadcaster
-		odom_broadcaster = std::make_shared<tf2_ros::TransformBroadcaster>(this);
+		odom_broadcaster = std::make_shared<tf2_ros::TransformBroadcaster>(node_);
 	}
 
 	PlatformDriverROS::~PlatformDriverROS()
@@ -82,13 +83,13 @@ namespace kelo
 	bool PlatformDriverROS::init(const std::string &configPrefix)
 	{
 		// declare wheel parameters
-		this->declare_parameter("num_wheels", rclcpp::ParameterType::PARAMETER_INTEGER);
-		this->get_parameter("num_wheels", nWheels);
-		RCLCPP_INFO_STREAM(this->get_logger(), "Number of wheels: " << nWheels);
+		node_->declare_parameter("num_wheels", rclcpp::ParameterType::PARAMETER_INTEGER);
+		node_->get_parameter("num_wheels", nWheels);
+		RCLCPP_INFO_STREAM(node_->get_logger(), "Number of wheels: " << nWheels);
 
 		if (nWheels == 0)
 		{
-			RCLCPP_ERROR_STREAM(this->get_logger(), "Missing number of wheels in config file");
+			RCLCPP_ERROR_STREAM(node_->get_logger(), "Missing number of wheels in config file");
 		}
 
 		wheelConfigs.resize(nWheels);
@@ -105,101 +106,105 @@ namespace kelo
 
 		// set driver control parameters
 		double x;
-		this->declare_parameter("current_stop", rclcpp::ParameterType::PARAMETER_DOUBLE);
-		if (this->get_parameter("current_stop", x))
+		node_->declare_parameter("current_stop", rclcpp::ParameterType::PARAMETER_DOUBLE);
+		if (node_->get_parameter("current_stop", x))
 			driver->setCurrentStop(x);
 
-		this->declare_parameter("current_drive", rclcpp::ParameterType::PARAMETER_DOUBLE);
-		if (this->get_parameter("current_drive", x))
+		node_->declare_parameter("current_drive", rclcpp::ParameterType::PARAMETER_DOUBLE);
+		if (node_->get_parameter("current_drive", x))
 			driver->setCurrentDrive(x);
 
-		this->declare_parameter("vlin_max", rclcpp::ParameterType::PARAMETER_DOUBLE);
-		if (this->get_parameter("vlin_max", x))
+		node_->declare_parameter("vlin_max", rclcpp::ParameterType::PARAMETER_DOUBLE);
+		if (node_->get_parameter("vlin_max", x))
 			driver->setMaxvlin(x);
 
-		this->declare_parameter("va_max", rclcpp::ParameterType::PARAMETER_DOUBLE);
-		if (this->get_parameter("va_max", x))
+		node_->declare_parameter("va_max", rclcpp::ParameterType::PARAMETER_DOUBLE);
+		if (node_->get_parameter("va_max", x))
 			driver->setMaxva(x);
 
-		this->declare_parameter("vlin_acc_max", rclcpp::ParameterType::PARAMETER_DOUBLE);
-		if (this->get_parameter("vlin_acc_max", x))
+		node_->declare_parameter("vlin_acc_max", rclcpp::ParameterType::PARAMETER_DOUBLE);
+		if (node_->get_parameter("vlin_acc_max", x))
 			driver->setMaxvlinacc(x);
 
-		this->declare_parameter("vlin_dec_max", rclcpp::ParameterType::PARAMETER_DOUBLE);
-		if (this->get_parameter("vlin_dec_max", x))
+		node_->declare_parameter("vlin_dec_max", rclcpp::ParameterType::PARAMETER_DOUBLE);
+		if (node_->get_parameter("vlin_dec_max", x))
 			driver->setMaxvlindec(x);
 
-		this->declare_parameter("angle_acc_max", rclcpp::ParameterType::PARAMETER_DOUBLE);
-		if (this->get_parameter("angle_acc_max", x))
+		node_->declare_parameter("angle_acc_max", rclcpp::ParameterType::PARAMETER_DOUBLE);
+		if (node_->get_parameter("angle_acc_max", x))
 			driver->setMaxangleacc(x);
 
-		this->declare_parameter("angle_dec_max", rclcpp::ParameterType::PARAMETER_DOUBLE);
-		if (this->get_parameter("va_acc_max", x))
+		node_->declare_parameter("va_acc_max", rclcpp::ParameterType::PARAMETER_DOUBLE);
+		if (node_->get_parameter("va_acc_max", x))
 			driver->setMaxvaacc(x);
 
-		this->declare_parameter("va_acc_max", rclcpp::ParameterType::PARAMETER_DOUBLE);
-		if (this->get_parameter("va_dec_max", x))
+		node_->declare_parameter("va_dec_max", rclcpp::ParameterType::PARAMETER_DOUBLE);
+		if (node_->get_parameter("va_dec_max", x))
 			driver->setMaxvadec(x);
 
 		// get and set damping parameters
 		double damping_parameters[3];
-		this->declare_parameter("platform_Kd_x", rclcpp::ParameterType::PARAMETER_DOUBLE);
-		this->get_parameter("platform_Kd_x", damping_parameters[0]);
+		node_->declare_parameter("platform_Kd_x", rclcpp::ParameterType::PARAMETER_DOUBLE);
+		node_->get_parameter("platform_Kd_x", damping_parameters[0]);
 
-		this->declare_parameter("platform_Kd_y", rclcpp::ParameterType::PARAMETER_DOUBLE);
-		this->get_parameter("platform_Kd_y", damping_parameters[1]);
+		node_->declare_parameter("platform_Kd_y", rclcpp::ParameterType::PARAMETER_DOUBLE);
+		node_->get_parameter("platform_Kd_y", damping_parameters[1]);
 
-		this->declare_parameter("platform_Kd_a", rclcpp::ParameterType::PARAMETER_DOUBLE);
-		this->get_parameter("platform_Kd_a", damping_parameters[2]);
+		node_->declare_parameter("platform_Kd_a", rclcpp::ParameterType::PARAMETER_DOUBLE);
+		node_->get_parameter("platform_Kd_a", damping_parameters[2]);
 
 		driver->setPlatformDampingParameters(damping_parameters);
 
 		joyVlinMax = driver->getMaxvlin();
 		joyVaMax = driver->getMaxva();
 
-		this->declare_parameter("joy_vlin_max", rclcpp::ParameterType::PARAMETER_DOUBLE);
-		if (this->get_parameter("joy_vlin_max", x))
+		node_->declare_parameter("joy_vlin_max", rclcpp::ParameterType::PARAMETER_DOUBLE);
+		if (node_->get_parameter("joy_vlin_max", x))
 			joyVlinMax = x;
 
-		this->declare_parameter("joy_va_max", rclcpp::ParameterType::PARAMETER_DOUBLE);
-		if (this->get_parameter("joy_va_max", x))
+		node_->declare_parameter("joy_va_max", rclcpp::ParameterType::PARAMETER_DOUBLE);
+		if (node_->get_parameter("joy_va_max", x))
 			joyVaMax = x;
 
-		this->declare_parameter("joy_scale", rclcpp::ParameterType::PARAMETER_DOUBLE);
-		if (this->get_parameter("joy_scale", x))
+		node_->declare_parameter("joy_scale", rclcpp::ParameterType::PARAMETER_DOUBLE);
+		if (node_->get_parameter("joy_scale", x))
 			if (x > 0 && x <= 1.0)
 				joyScale = x;
 
 		bool b;
 
-		this->declare_parameter("use_joy", rclcpp::ParameterType::PARAMETER_BOOL);
-		if (this->get_parameter("active_by_joypad", b))
+		node_->declare_parameter("active_by_joypad", rclcpp::ParameterType::PARAMETER_BOOL);
+		if (node_->get_parameter("active_by_joypad", b))
 			activeByJoypad = b;
 		if (!activeByJoypad)
 			driver->setCanChangeActive();
 
-
-		this->declare_parameter("current_max", rclcpp::ParameterType::PARAMETER_DOUBLE);
-		if (this->get_parameter("current_max", x))
+		node_->declare_parameter("current_max", rclcpp::ParameterType::PARAMETER_DOUBLE);
+		if (node_->get_parameter("current_max", x))
 			currentMax = x;
 
 		// initialize publishers and subscribers
-		odomPublisher = this->create_publisher<nav_msgs::msg::Odometry>("odom", 10);
-		odomInitializedPublisher = this->create_publisher<std_msgs::msg::Empty>("odom_initialized", 10);
-		imuPublisher = this->create_publisher<sensor_msgs::msg::Imu>("imu", 10);
-		processDataInputPublisher = this->create_publisher<kelo_interfaces::msg::KeloDrivesInput>("wheels_input", 10);
-		batteryPublisher = this->create_publisher<std_msgs::msg::Float32>("battery", 10);
-		errorPublisher = this->create_publisher<std_msgs::msg::Int32>("error", 10);
-		statusPublisher = this->create_publisher<std_msgs::msg::Int32>("status", 10);
+		RCLCPP_INFO_STREAM(node_->get_logger(), "Initializing publishers and subscribers");
+		odomPublisher = node_->create_publisher<nav_msgs::msg::Odometry>("odom", 10);
+		odomInitializedPublisher = node_->create_publisher<std_msgs::msg::Empty>("odom_initialized", 10);
+		imuPublisher = node_->create_publisher<sensor_msgs::msg::Imu>("imu", 10);
+		processDataInputPublisher = node_->create_publisher<kelo_interfaces::msg::KeloDrivesInput>("wheels_input", 10);
+		batteryPublisher = node_->create_publisher<std_msgs::msg::Float32>("battery", 10);
+		errorPublisher = node_->create_publisher<std_msgs::msg::Int32>("error", 10);
+		statusPublisher = node_->create_publisher<std_msgs::msg::Int32>("status", 10);
 
-		joySubscriber = this->create_subscription<sensor_msgs::msg::Joy>("/joy", 1000, std::bind(&PlatformDriverROS::joyCallback, this, std::placeholders::_1));
-		cmdVelSubscriber = this->create_subscription<geometry_msgs::msg::Twist>("/cmd_vel", 1000, std::bind(&PlatformDriverROS::cmdVelCallback, this, std::placeholders::_1));
-		resetSubscriber = this->create_subscription<std_msgs::msg::Empty>("reset", 1, std::bind(&PlatformDriverROS::resetCallback, this, std::placeholders::_1));
-		enableSubscriber = this->create_subscription<std_msgs::msg::Int32MultiArray>("wheels_enable", 1, std::bind(&PlatformDriverROS::enableCallback, this, std::placeholders::_1));
+		joySubscriber = node_->create_subscription<sensor_msgs::msg::Joy>("/joy", 1000, std::bind(&PlatformDriverROS::joyCallback, this, std::placeholders::_1));
+		cmdVelSubscriber = node_->create_subscription<geometry_msgs::msg::Twist>("/cmd_vel", 1000, std::bind(&PlatformDriverROS::cmdVelCallback, this, std::placeholders::_1));
+		resetSubscriber = node_->create_subscription<std_msgs::msg::Empty>("reset", 1, std::bind(&PlatformDriverROS::resetCallback, this, std::placeholders::_1));
+		enableSubscriber = node_->create_subscription<std_msgs::msg::Int32MultiArray>("wheels_enable", 1, std::bind(&PlatformDriverROS::enableCallback, this, std::placeholders::_1));
 
-		odom_broadcaster = std::make_unique<tf2_ros::TransformBroadcaster>(*this);
-
+		odom_broadcaster = std::make_unique<tf2_ros::TransformBroadcaster>(*node_);
 		initializeEncoderValue();
+		if (!node_)
+		{
+			RCLCPP_ERROR(node_->get_logger(), "Node is not initialized!");
+		}
+		return true;
 	}
 
 	bool PlatformDriverROS::step()
@@ -269,21 +274,21 @@ namespace kelo
 			kelo::WheelConfig config;
 			config.enable = true;
 			config.reverseVelocity = true;
-			this->declare_parameter(groupName + ".ethercat_number", rclcpp::ParameterType::PARAMETER_INTEGER);
-			this->declare_parameter(groupName + ".x", rclcpp::ParameterType::PARAMETER_DOUBLE);
-			this->declare_parameter(groupName + ".y", rclcpp::ParameterType::PARAMETER_DOUBLE);
-			this->declare_parameter(groupName + ".a", rclcpp::ParameterType::PARAMETER_DOUBLE);
-			this->declare_parameter(groupName + ".reverse_velocity", rclcpp::ParameterType::PARAMETER_INTEGER);
+			node_->declare_parameter(groupName + ".ethercat_number", rclcpp::ParameterType::PARAMETER_INTEGER);
+			node_->declare_parameter(groupName + ".x", rclcpp::ParameterType::PARAMETER_DOUBLE);
+			node_->declare_parameter(groupName + ".y", rclcpp::ParameterType::PARAMETER_DOUBLE);
+			node_->declare_parameter(groupName + ".a", rclcpp::ParameterType::PARAMETER_DOUBLE);
+			node_->declare_parameter(groupName + ".reverse_velocity", rclcpp::ParameterType::PARAMETER_INTEGER);
 
 			bool ok =
-				this->get_parameter(groupName + ".ethercat_number", config.ethercatNumber) && this->get_parameter(groupName + ".x", config.x) && this->get_parameter(groupName + ".y", config.y) && this->get_parameter(groupName + ".a", config.a);
+				node_->get_parameter(groupName + ".ethercat_number", config.ethercatNumber) && node_->get_parameter(groupName + ".x", config.x) && node_->get_parameter(groupName + ".y", config.y) && node_->get_parameter(groupName + ".a", config.a);
 
 			int reverseVelocity = 0;
-			if (this->get_parameter(groupName + ".reverse_velocity", reverseVelocity))
+			if (node_->get_parameter(groupName + ".reverse_velocity", reverseVelocity))
 				config.reverseVelocity = (reverseVelocity != 0);
 
 			if (!ok)
-				RCLCPP_WARN(this->get_logger(), "Missing config value for wheel %d", i);
+				RCLCPP_WARN(node_->get_logger(), "Missing config value for wheel %d", i);
 
 			wheelConfigs[i] = config;
 		}
@@ -447,7 +452,7 @@ namespace kelo
 
 	auto createQuaternionMsgFromYaw(double yaw) // source: https://github.com/LyuDun/picbag/issues/29
 	{
-		tf2::Quaternion q; 
+		tf2::Quaternion q;
 		q.setRPY(0, 0, yaw);
 		return tf2::toMsg(q);
 	}
@@ -579,15 +584,14 @@ namespace kelo
 		}
 	}
 
-	void PlatformDriverROS::joyCallback(const std::shared_ptr<const sensor_msgs::msg::Joy>& joy)
+	void PlatformDriverROS::joyCallback(const std::shared_ptr<const sensor_msgs::msg::Joy> &joy)
 	{
 		if (joy->buttons[5])
 		{
 			useJoy = true;
 
 			// set base_control_mode
-			std::string base_control_mode;
-			if (this->get_parameter("/base_control_mode", base_control_mode))
+			if (node_->get_parameter("/base_control_mode", base_control_mode))
 			{
 				driver->setControlMode(base_control_mode);
 			}
@@ -622,10 +626,11 @@ namespace kelo
 		}
 	}
 
-	void PlatformDriverROS::cmdVelCallback(const std::shared_ptr<const geometry_msgs::msg::Twist>& msg)
+	void PlatformDriverROS::cmdVelCallback(const std::shared_ptr<const geometry_msgs::msg::Twist> &msg)
 	{
+		RCLCPP_INFO(rclcpp::get_logger("node"), "cmd_vel callback");
 		// set base_control_mode
-		if (this->get_parameter("/base_control_mode", base_control_mode))
+		if (node_->get_parameter("/base_control_mode", base_control_mode))
 		{
 			driver->setControlMode(base_control_mode);
 		}

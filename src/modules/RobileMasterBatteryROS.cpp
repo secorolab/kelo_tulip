@@ -51,8 +51,8 @@
 
 namespace kelo {
 
-RobileMasterBatteryROS::RobileMasterBatteryROS()
-: EtherCATModuleROS(), battery(nullptr), topicPrefix("robile_master_battery/") {
+RobileMasterBatteryROS::RobileMasterBatteryROS(std::shared_ptr<rclcpp::Node> node)
+: EtherCATModuleROS(node), battery(nullptr), topicPrefix("robile_master_battery/") {
 	battery = NULL;
 	topicPrefix = "robile_master_battery/";
 }
@@ -62,11 +62,11 @@ RobileMasterBatteryROS::~RobileMasterBatteryROS() {
 
 bool RobileMasterBatteryROS::init(const std::string& configPrefix) {
     // get EtherCAT slave number from parameters
-    int ethercatNumber = this->declare_parameter<int>(configPrefix + "ethercat_number", 0);
+    int ethercatNumber = node_->declare_parameter<int>(configPrefix + "ethercat_number", 0);
     if (ethercatNumber <= 0) {
-        ethercatNumber = this->declare_parameter<int>("robile_master_battery_ethercat_number", 0);
+        ethercatNumber = node_->declare_parameter<int>("robile_master_battery_ethercat_number", 0);
         if (ethercatNumber <= 0) {
-            RCLCPP_ERROR(this->get_logger(), "EtherCAT number for robile master battery not set.");
+            RCLCPP_ERROR(node_->get_logger(), "EtherCAT number for robile master battery not set.");
             return false;
         }
     }
@@ -78,22 +78,22 @@ bool RobileMasterBatteryROS::init(const std::string& configPrefix) {
     }
 
     // Setup publishers and subscribers
-    batteryPublisher = this->create_publisher<std_msgs::msg::Float32>(topicPrefix + "voltage", 10);
-    processDataInputPublisher = this->create_publisher<std_msgs::msg::Float64MultiArray>(topicPrefix + "ethercat_input", 10);
+    batteryPublisher = node_->create_publisher<std_msgs::msg::Float32>(topicPrefix + "voltage", 10);
+    processDataInputPublisher = node_->create_publisher<std_msgs::msg::Float64MultiArray>(topicPrefix + "ethercat_input", 10);
 
-    resetErrorSubscriber = this->create_subscription<std_msgs::msg::Empty>(
+    resetErrorSubscriber = node_->create_subscription<std_msgs::msg::Empty>(
         topicPrefix + "reset_error", 10,
         [this](const std_msgs::msg::Empty::SharedPtr msg) { this->callbackResetError(msg); });
 
-    shutdownSubscriber = this->create_subscription<std_msgs::msg::Int32>(
+    shutdownSubscriber = node_->create_subscription<std_msgs::msg::Int32>(
         topicPrefix + "shutdown", 10,
         [this](const std_msgs::msg::Int32::SharedPtr msg) { this->callbackShutdown(msg); });
 
-    chargerStartSubscriber = this->create_subscription<std_msgs::msg::Int32>(
+    chargerStartSubscriber = node_->create_subscription<std_msgs::msg::Int32>(
         topicPrefix + "charger_start", 10,
         [this](const std_msgs::msg::Int32::SharedPtr msg) { this->callbackChargerStart(msg); });
 
-    chargerStopSubscriber = this->create_subscription<std_msgs::msg::Int32>(
+    chargerStopSubscriber = node_->create_subscription<std_msgs::msg::Int32>(
         topicPrefix + "charger_stop", 10,
         [this](const std_msgs::msg::Int32::SharedPtr msg) { this->callbackChargerStop(msg); });
 

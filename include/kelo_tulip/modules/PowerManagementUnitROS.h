@@ -41,41 +41,6 @@
  *
  ******************************************************************************/
 
-
-// #ifndef MODULES_POWERMANAGEMENTUNITROS_H
-// #define MODULES_POWERMANAGEMENTUNITROS_H
-
-// #include "kelo_tulip/modules/PowerManagementUnit.h"
-// #include "kelo_tulip/EtherCATModuleROS.h"
-// #include <std_msgs/Empty.h>
-// #include <std_msgs/Int32.h>
-
-// namespace kelo {
-
-// //! ROS interface for PowerManagementUnit
-
-// class PowerManagementUnitROS : public EtherCATModuleROS {
-// public:
-// 	PowerManagementUnitROS();
-// 	virtual ~PowerManagementUnitROS();
-
-// 	virtual bool init(ros::NodeHandle& nh, std::string configPrefix);
-
-// 	virtual bool step();
-
-// 	virtual std::string getType();
-
-// 	virtual EtherCATModule* getEtherCATModule();
-	
-// protected:
-// 	PowerManagementUnit* pmu;
-
-// };
-
-// } // namespace kelo
-
-// #endif // MODULES_POWERMANAGEMENTUNITROS_H
-
 #ifndef MODULES_POWERMANAGEMENTUNITROS_H
 #define MODULES_POWERMANAGEMENTUNITROS_H
 
@@ -91,7 +56,7 @@ namespace kelo {
 
 class PowerManagementUnitROS : public EtherCATModuleROS {
 public:
-    PowerManagementUnitROS();
+    PowerManagementUnitROS(std::shared_ptr<rclcpp::Node> node);
 
     virtual ~PowerManagementUnitROS();
 

@@ -63,7 +63,7 @@ namespace kelo
 	PlatformDriver::PlatformDriver(const std::vector<WheelConfig> &wheelConfigs, const std::vector<WheelData> &wheelData)
 		: wheelConfigs(wheelConfigs), wheelData(wheelData)
 	{
-		platform_control_mode = "VELOCITY_CONTROL";
+		platform_control_mode = "";
 
 		if (wheelConfigs.size() != wheelData.size() || nWheels > wheelConfigs.size())
 		{ // should not happen

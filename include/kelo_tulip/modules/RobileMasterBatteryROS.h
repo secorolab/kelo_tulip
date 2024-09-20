@@ -60,7 +60,7 @@ namespace kelo {
 
 class RobileMasterBatteryROS : public EtherCATModuleROS {
 public:
-	RobileMasterBatteryROS();
+	RobileMasterBatteryROS(std::shared_ptr<rclcpp::Node> node);
 	virtual ~RobileMasterBatteryROS();
 
 	virtual bool init(const std::string& configPrefix);

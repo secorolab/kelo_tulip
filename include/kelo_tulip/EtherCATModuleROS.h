@@ -54,12 +54,10 @@ namespace kelo {
 //! The created module will then be passed on to the EtherCAT master,
 //! while this ROS module can provide external access via ROS.
 
-class EtherCATModuleROS : public rclcpp::Node {
+class EtherCATModuleROS {
 public:
-	//! Default constructor.
-	EtherCATModuleROS();
+	EtherCATModuleROS(std::shared_ptr<rclcpp::Node> node);
 	
-	//! Default destructor.
 	virtual ~EtherCATModuleROS();
 
 	//! Initialize this module, must be overridden.
@@ -77,6 +75,8 @@ public:
 	virtual EtherCATModule* getEtherCATModule() = 0;
 
 protected:
+
+	std::shared_ptr<rclcpp::Node> node_;
 
 };
 

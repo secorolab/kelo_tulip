@@ -13,7 +13,7 @@ find_package(std_msgs REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(nav_msgs REQUIRED)
-find_package(rosidl_default_generators REQUIRED)
+# find_package(rosidl_default_generators REQUIRED)
 find_package(tf2 REQUIRED)
 find_package(tf2_ros REQUIRED)
 find_package(tf2_geometry_msgs REQUIRED)
@@ -46,7 +46,7 @@ include_directories(include)
 include_directories(
 	${INCLUDE_DIRS}
 	${rclcpp_INCLUDE_DIRS}
-	${rcl_interfaces_INCLUDE_DIRS}
+	# ${rcl_interfaces_INCLUDE_DIRS}
 	${std_msgs_INCLUDE_DIRS}
 	${kelo_interfaces_INCLUDE_DIRS}
 	${geometry_msgs_INCLUDE_DIRS}
@@ -106,7 +106,7 @@ ament_target_dependencies(platform_driver
   tf2_ros
   tf2_geometry_msgs
   kelo_interfaces
-  ament_index_cpp
+#   ament_index_cpp
 )
 
 ament_target_dependencies(tulip_library

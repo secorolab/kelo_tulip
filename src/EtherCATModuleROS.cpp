@@ -46,7 +46,8 @@
 namespace kelo
 {
 
-	EtherCATModuleROS::EtherCATModuleROS() : rclcpp::Node("ethercat_module_ros")
+	EtherCATModuleROS::EtherCATModuleROS(std::shared_ptr<rclcpp::Node> node)
+    : node_(node)
 	{
 	}
 
