@@ -18,6 +18,8 @@ find_package(tf2 REQUIRED)
 find_package(tf2_ros REQUIRED)
 find_package(tf2_geometry_msgs REQUIRED)
 find_package(kelo_interfaces REQUIRED)
+find_package(GSL REQUIRED)
+
 # find_library(SOEM_LIBRARIES NAMES soem)
 
 set(Boost_USE_STATIC_LIBS ON)
@@ -71,6 +73,9 @@ add_subdirectory(src/soem)
 add_library(tulip_velocity_controller
 	src/Utils.cpp
 	src/VelocityPlatformController.cpp
+	src/PlatformToWheelInverseKinematicsSolver.c
+	src/SmartWheelKinematics.c
+	src/KELORobotKinematics.c
 )
 
 add_library(tulip_library
@@ -106,7 +111,6 @@ ament_target_dependencies(platform_driver
   tf2_ros
   tf2_geometry_msgs
   kelo_interfaces
-#   ament_index_cpp
 )
 
 ament_target_dependencies(tulip_library
@@ -136,7 +140,40 @@ target_link_libraries(platform_driver
   ${kelo_interfaces_LIBRARIES}
 )
 
-# include_directories(/opt/ros/humble/include/tf2_geometry_msgs)
+
+add_executable(kelo_gazebo_platform_controller
+  src/KeloDrive.cpp
+  src/PlatformController.cpp
+  src/platform_controller_gz.cpp
+)
+
+ament_target_dependencies(kelo_gazebo_platform_controller
+  rclcpp
+  tf2
+  tf2_geometry_msgs
+  nav_msgs 
+  sensor_msgs
+  Boost
+)
+
+target_link_libraries(kelo_gazebo_platform_controller
+  tulip_velocity_controller
+  gsl
+  gslcblas	
+)
+
+install(TARGETS
+	tulip_library
+	tulip_velocity_controller
+	kelo_gazebo_platform_controller
+	DESTINATION lib
+)
+
+install(TARGETS
+	platform_driver
+	kelo_gazebo_platform_controller
+	DESTINATION lib/${PROJECT_NAME}
+)
 
 IF(USE_SETCAP)
   add_custom_command(TARGET platform_driver POST_BUILD
@@ -144,10 +181,11 @@ IF(USE_SETCAP)
   )
 endif(USE_SETCAP)
 
-install(TARGETS platform_driver tulip_library tulip_velocity_controller
-	ARCHIVE DESTINATION lib
+install(TARGETS platform_driver tulip_library tulip_velocity_controller kelo_gazebo_platform_controller
+	EXPORT export_${PROJECT_NAME}
 	LIBRARY DESTINATION lib
-	RUNTIME DESTINATION lib/${PROJECT_NAME}
+	ARCHIVE DESTINATION lib
+	RUNTIME DESTINATION bin
 )
 
 install(DIRECTORY include/
@@ -166,5 +204,11 @@ install(DIRECTORY
 install(DIRECTORY config/
 DESTINATION share/${PROJECT_NAME}/config
 )
+
+ament_export_targets(export_${PROJECT_NAME} HAS_LIBRARY_TARGET)
+ament_export_dependencies(rosidl_default_runtime)
+ament_export_include_directories(${INCLUDE_DIRS})
+ament_export_dependencies(Boost)
+ament_export_dependencies(std_msgs)
 
 ament_package()
