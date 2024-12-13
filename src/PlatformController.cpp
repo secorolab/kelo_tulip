@@ -57,7 +57,7 @@ PlatformController::PlatformController(const std::string& node_name)
         // Setup subscribers
         _jointStatesSubscriber = this->create_subscription<sensor_msgs::msg::JointState>(
         "/joint_states",
-        rclcpp::QoS(10).reliable().transient_local(),
+        rclcpp::QoS(10),
         std::bind(&PlatformController::jointStatesCallBack, this, std::placeholders::_1)
         );
 
