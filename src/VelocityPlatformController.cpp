@@ -44,6 +44,7 @@
 
 #include <kelo_tulip/VelocityPlatformController.h>
 #include <math.h>
+#include <iostream>
 
 namespace kelo
 {
@@ -117,15 +118,16 @@ namespace kelo
     {
         // FIXME: remove hardcoding wheel params
 
-        unsigned int num_of_wheels = wheel_configs.size();
+        // unsigned int num_of_wheels = wheel_configs.size();
 
         float wheel_diameter = 0.105f;
         float wheel_caster = 0.01f;
         float wheel_distance = 0.055f;
 
         wheel_params_.clear();
+        wheel_params_.reserve(wheel_configs.size());
 
-        for ( size_t i = 0; i < num_of_wheels; i++ )
+        for ( const auto& wc : wheel_configs )
         {
             // float wheel_diameter = wheel_configs[i].model.diameter;
             // float wheel_caster = wheel_configs[i].model.casteroffset;
@@ -143,11 +145,14 @@ namespace kelo
             wheel_param.wheel_diameter = wheel_diameter;
             wheel_param.max_pivot_error = M_PI * 0.25f;
 
-            wheel_param.pivot_position.x = wheel_configs[i].x;
-            wheel_param.pivot_position.y = wheel_configs[i].y;
-            wheel_param.pivot_offset = wheel_configs[i].a;
+            wheel_param.pivot_position.x = wc.x;
+            wheel_param.pivot_position.y = wc.y;
+            wheel_param.pivot_offset = wc.a;
 
-            wheel_params_.push_back(wheel_param);
+            // std::cout << "--> drive: " << wc.ethercatNumber << "  wheel_param.pivot_position: " <<  wheel_param.pivot_position.x << " " << wheel_param.pivot_position.y << std::endl;
+
+            // insert wheel_param into vector by ethercat number
+            wheel_params_[wc.ethercatNumber] = wheel_param;
         }
     }
             
@@ -384,6 +389,8 @@ namespace kelo
         target_vel_at_pivot.y = platform_ramped_vel_.y
                                 + (platform_ramped_vel_.a * wheel_param.pivot_position.x);
 
+        // std::cout << "drive: " << wheel_index << "  wheel_param.pivot_position: " <<  wheel_param.pivot_position.x << " " << wheel_param.pivot_position.y << std::endl;
+
         /* target pivot vector to angle */
         float target_pivot_angle = atan2(target_vel_at_pivot.y, target_vel_at_pivot.x);
 
@@ -395,6 +402,8 @@ namespace kelo
         pivot_error = Utils::clip(pivot_error,
                                            wheel_param.max_pivot_error,
                                            -wheel_param.max_pivot_error);
+        
+        // std::cout << "drive: " << wheel_index << " target_pivot_angle: " << target_pivot_angle << " pivot_angle: " << pivot_angle << " pivot_error: " << pivot_error << std::endl;
 
         /* target velocity vector at wheel position */
         Point2D target_vel_vec_l, target_vel_vec_r;

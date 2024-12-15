@@ -104,7 +104,7 @@ PlatformController::PlatformController(const std::string& node_name)
         for (auto& joint: pivotJointData) {
             std::string driveName = getPivotName(joint.first); 
             // Eg: from "eddie_rear_right_drive_pivot_joint" to "eddie_rear_right_drive_struct_link"
-            std::string pivotLink = driveName + "_drive_struct_link";
+            std::string pivotLink = driveName + "_drive_attachment_link";
             
             geometry_msgs::msg::TransformStamped transform;
             try {
@@ -133,6 +133,7 @@ PlatformController::PlatformController(const std::string& node_name)
             wc.a = 0; // assume zero in simulation
             _wheelConfigs[drive.first] = wc;
             wheelConfigsVector.push_back(wc);
+            // std::cout << "--<> Drive: " << drive.first << " num: " << wc.ethercatNumber << " x: " << wc.x << " y: " << wc.y << std::endl;
             wheelNumber++;
         }
         _controller.initialise(wheelConfigsVector);
