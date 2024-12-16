@@ -1,44 +1,5 @@
-/******************************************************************************
- * Copyright (c) 2021
- * KELO Robotics GmbH
- *
- * Author:
- * Sushant Chavan
- * Walter Nowak
- *
- *
- * This software is published under a dual-license: GNU Lesser General Public
- * License LGPL 2.1 and BSD license. The dual-license implies that users of this
- * code may choose which terms they prefer.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *
- * * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- * * Redistributions in binary form must reproduce the above copyright
- * notice, this list of conditions and the following disclaimer in the
- * documentation and/or other materials provided with the distribution.
- * * Neither the name of Locomotec nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License LGPL as
- * published by the Free Software Foundation, either version 2.1 of the
- * License, or (at your option) any later version or the BSD license.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU Lesser General Public License LGPL and the BSD license for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License LGPL and BSD license along with this program.
- *
- ******************************************************************************/
-#ifndef PLATFORM_CONTROLLER_HPP
-#define PLATFORM_CONTROLLER_HPP
+#ifndef PLATFORM_CONTROLLER_GZ_HPP
+#define PLATFORM_CONTROLLER_GZ_HPP
 
 #include <rclcpp/rclcpp.hpp>
 #include <nav_msgs/msg/odometry.hpp>
@@ -54,12 +15,15 @@
  * @brief Velocity controller for gazebo simulations of arbitrary
  * KELO platform configurations
  */
-class PlatformController : public rclcpp::Node {
-public:
+class PlatformControllerGZ : public rclcpp::Node
+{
+  public:
     /**
      * @brief Construct a new KELO Platform Controller object
      */
-    PlatformController(const std::string& node_name);
+    PlatformControllerGZ();
+
+    ~PlatformControllerGZ();
 
     /**
      * @brief Set the linear and angular velocities for the KELO platform
@@ -108,10 +72,10 @@ public:
     /**
      * @brief Set the wheel setpoint velocities for all the hub wheels in the KELO platform
      */
-    void setAllHubWheelVelocities(const std_msgs::msg::Float64MultiArray& msg);
+    void setAllHubWheelVelocities(const std_msgs::msg::Float64MultiArray &msg);
 
 
-protected:
+  protected:
     /**
      * @brief Callback function to receive and process the robot joint states from Gazebo
      *
@@ -121,17 +85,15 @@ protected:
 
     /**
      * @brief Initialize the Kelo drive data structures and the Velocity controller
-     *
-     * @param pivotJointData Map of Kelo drive name vs its latest pivot orientation
      */
-    void initDrives(const std::map<std::string, double>& pivotJointData);
+    void initDrives();
 
     /**
      * @brief Set the Pivot Orientations for every Kelo drive in the KELO platform
      *
      * @param pivotJointData Map of Kelo drive name vs the latest pivot orientation
      */
-    void setPivotOrientations(const std::map<std::string, double>& pivotJointData);
+    void setPivotOrientations();
 
     /**
      * @brief Extract the pivot name from the pivot joint name
@@ -139,35 +101,59 @@ protected:
      * @param jointName Joint name of the Kelo drive pivot
      * @return std::string Name of the pivot
      */
-    std::string getPivotName(const std::string& jointName);
+    std::string getPivotName(const std::string &jointName);
+
+    void cmdVelCallback(const geometry_msgs::msg::Twist::SharedPtr msg);
+
+    void controlLoop();
 
     // ROS2 Specific Members
     std::unique_ptr<tf2_ros::Buffer> _tfBuffer;
     std::unique_ptr<tf2_ros::TransformListener> _tfListener;
 
     rclcpp::Subscription<sensor_msgs::msg::JointState>::SharedPtr _jointStatesSubscriber;
+    rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr _cmdVelSubscriber;
     rclcpp::Publisher<std_msgs::msg::Float64MultiArray>::SharedPtr base_velocity_control_pub_;
+    rclcpp::TimerBase::SharedPtr _controlTimer;
 
     // Existing Members
     std::map<std::string, KeloDrive> _drives;
-    bool _initialized{false};
+    std::vector<KeloDrive> _drivesVector;
+    bool _initialized{ false };
 
-    double _cmdVelX{0.0};
-    double _cmdVelY{0.0};
-    double _cmdVelA{0.0};
+    std::string base_control_mode_;
+    int num_wheels_;
+    std::string wheels_controller_;
+    std::string pivot_joint_identifier_;
+
+    double _cmdVelX{ 0.0 };
+    double _cmdVelY{ 0.0 };
+    double _cmdVelA{ 0.0 };
+
+    struct PivotJointData
+    {
+        std::string jointName;
+        double pivotAngle;
+    };
+
+    std::vector<PivotJointData> _pivotJointDataVec;
+
+    sensor_msgs::msg::JointState _jointStateMsg;
 
     std::map<std::string, int> drives_map = {
-    // Note: the order of the drives should be same as the order of controllers in eddie_controllers.yaml (eddie_gazebo)
-    // Assumption: for each wheel unit, first the left wheel and then the right wheel is considered in the controller configuration file
+        // Note: the order of the drives should be same as the order of controllers in
+        // eddie_controllers.yaml (eddie_gazebo)
+        // Assumption: for each wheel unit, first the left wheel and then the right wheel is
+        // considered in the controller configuration file
 
-        {"eddie_front_left", 0},
-        {"eddie_rear_left", 1},
-        {"eddie_rear_right", 2},
-        {"eddie_front_right", 3}
+        { "eddie_front_left", 0 },
+        { "eddie_rear_left", 1 },
+        { "eddie_rear_right", 2 },
+        { "eddie_front_right", 3 }
     };
 
     kelo::VelocityPlatformController _controller;
     std::map<std::string, kelo::WheelConfig> _wheelConfigs;
 };
 
-#endif // PLATFORM_CONTROLLER_HPP
+#endif// PLATFORM_CONTROLLER_HPP

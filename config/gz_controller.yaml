@@ -1,0 +1,38 @@
+kelo_gz_platform_controller:
+  ros__parameters:
+    wheels_controller: base_velocity_controller
+    base_control_mode: VELOCITY
+    num_wheels: 4
+    platform_max_lin_vel: 0.5
+    platform_max_ang_vel: 1.0
+
+    pivot_joint_identifier: pivot_joint
+
+    wheels:
+      wheel0:
+        identifier: front_left
+        ethercat_number: 0
+        x: 0.195
+        y: 0.21
+        a: 0.0
+
+      wheel1:
+        identifier: rear_left
+        ethercat_number: 1
+        x: -0.195
+        y: 0.21
+        a: 0.0
+
+      wheel2:
+        identifier: rear_right
+        ethercat_number: 2
+        x: -0.195
+        y: -0.21
+        a: 0.0
+
+      wheel3:
+        identifier: front_right
+        ethercat_number: 3
+        x: 0.195
+        y: -0.21
+        a: 0.0

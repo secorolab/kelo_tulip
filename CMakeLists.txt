@@ -141,13 +141,12 @@ target_link_libraries(platform_driver
 )
 
 
-add_executable(kelo_gazebo_platform_controller
+add_executable(kelo_gz_platform_controller
   src/KeloDrive.cpp
-  src/PlatformController.cpp
-  src/platform_controller_gz.cpp
+  src/PlatformControllerGZ.cpp
 )
 
-ament_target_dependencies(kelo_gazebo_platform_controller
+ament_target_dependencies(kelo_gz_platform_controller
   rclcpp
   tf2
   tf2_geometry_msgs
@@ -156,7 +155,7 @@ ament_target_dependencies(kelo_gazebo_platform_controller
   Boost
 )
 
-target_link_libraries(kelo_gazebo_platform_controller
+target_link_libraries(kelo_gz_platform_controller
   tulip_velocity_controller
   gsl
   gslcblas	
@@ -165,13 +164,13 @@ target_link_libraries(kelo_gazebo_platform_controller
 install(TARGETS
 	tulip_library
 	tulip_velocity_controller
-	kelo_gazebo_platform_controller
+	kelo_gz_platform_controller
 	DESTINATION lib
 )
 
 install(TARGETS
 	platform_driver
-	kelo_gazebo_platform_controller
+	kelo_gz_platform_controller
 	DESTINATION lib/${PROJECT_NAME}
 )
 
@@ -181,7 +180,7 @@ IF(USE_SETCAP)
   )
 endif(USE_SETCAP)
 
-install(TARGETS platform_driver tulip_library tulip_velocity_controller kelo_gazebo_platform_controller
+install(TARGETS platform_driver tulip_library tulip_velocity_controller kelo_gz_platform_controller
 	EXPORT export_${PROJECT_NAME}
 	LIBRARY DESTINATION lib
 	ARCHIVE DESTINATION lib
