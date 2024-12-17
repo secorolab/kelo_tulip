@@ -6,7 +6,7 @@ def generate_launch_description():
     sl.declare_arg('use_sim_time', 'True')
 
     # config file
-    config_file = sl.find('kelo_tulip', 'gz_controller', 'config')
+    config_file = sl.find('kelo_tulip', 'gz_controller.yaml', 'config')
 
     sl.node(
         'kelo_tulip',

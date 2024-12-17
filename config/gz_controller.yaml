@@ -1,8 +1,9 @@
-kelo_gz_platform_controller:
+kelo_platform_controller_gz:
   ros__parameters:
-    wheels_controller: base_velocity_controller
     base_control_mode: VELOCITY
+    wheels_controller: base_velocity_controller
     num_wheels: 4
+    
     platform_max_lin_vel: 0.5
     platform_max_ang_vel: 1.0
 
