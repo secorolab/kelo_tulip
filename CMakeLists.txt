@@ -141,38 +141,19 @@ target_link_libraries(platform_driver
 )
 
 
-add_executable(kelo_gazebo_platform_controller
-  src/KeloDrive.cpp
-  src/PlatformController.cpp
-  src/platform_controller_gz.cpp
+add_executable(kelo_gz_platform_controller
+  src/PlatformControllerGZ.cpp
 )
-
-ament_target_dependencies(kelo_gazebo_platform_controller
+ament_target_dependencies(kelo_gz_platform_controller
   rclcpp
-  tf2
-  tf2_geometry_msgs
-  nav_msgs 
   sensor_msgs
+  geometry_msgs
   Boost
 )
-
-target_link_libraries(kelo_gazebo_platform_controller
+target_link_libraries(kelo_gz_platform_controller
   tulip_velocity_controller
   gsl
   gslcblas	
-)
-
-install(TARGETS
-	tulip_library
-	tulip_velocity_controller
-	kelo_gazebo_platform_controller
-	DESTINATION lib
-)
-
-install(TARGETS
-	platform_driver
-	kelo_gazebo_platform_controller
-	DESTINATION lib/${PROJECT_NAME}
 )
 
 IF(USE_SETCAP)
@@ -181,15 +162,15 @@ IF(USE_SETCAP)
   )
 endif(USE_SETCAP)
 
-install(TARGETS platform_driver tulip_library tulip_velocity_controller kelo_gazebo_platform_controller
+install(TARGETS tulip_library tulip_velocity_controller
 	EXPORT export_${PROJECT_NAME}
 	LIBRARY DESTINATION lib
 	ARCHIVE DESTINATION lib
 	RUNTIME DESTINATION bin
 )
 
-install(DIRECTORY include/
-	DESTINATION include
+install(TARGETS platform_driver kelo_gz_platform_controller
+	DESTINATION lib/${PROJECT_NAME}
 )
 
 install(DIRECTORY include/${PROJECT_NAME}/
@@ -207,8 +188,5 @@ DESTINATION share/${PROJECT_NAME}/config
 
 ament_export_targets(export_${PROJECT_NAME} HAS_LIBRARY_TARGET)
 ament_export_dependencies(rosidl_default_runtime)
-ament_export_include_directories(${INCLUDE_DIRS})
-ament_export_dependencies(Boost)
-ament_export_dependencies(std_msgs)
 
 ament_package()

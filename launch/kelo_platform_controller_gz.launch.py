@@ -1,25 +1,21 @@
-import launch
-from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument
-from launch_ros.actions import Node
-from launch.substitutions import LaunchConfiguration
-import os
+from simple_launch import SimpleLauncher
 
 def generate_launch_description():
-    return LaunchDescription([
-        # Declare the parameter for platform_max_lin_vel if needed
-        DeclareLaunchArgument('platform_max_lin_vel', default_value='1.0', description='Max Linear Velocity'),
-        DeclareLaunchArgument('platform_max_ang_vel', default_value='1.0', description='Max Angular Velocity'),
+    sl = SimpleLauncher()
 
-        # Start the KeloGazeboController node
-        Node(
-            package='kelo_tulip',
-            executable='kelo_gazebo_platform_controller',
-            output='screen',
-            parameters=[{
-                'use_sim_time': True,
-                'platform_max_lin_vel': LaunchConfiguration('platform_max_lin_vel'),
-                'platform_max_ang_vel': LaunchConfiguration('platform_max_ang_vel'),
-            }],
-        ),
-    ])
+    sl.declare_arg('use_sim_time', 'True')
+
+    # config file
+    config_file = sl.find('kelo_tulip', 'gz_controller.yaml', 'config')
+
+    sl.node(
+        'kelo_tulip',
+        'kelo_gz_platform_controller',
+        output='screen',
+        parameters=[
+            config_file,
+            {'use_sim_time': sl.arg('use_sim_time')}
+        ]
+    )
+
+    return sl.launch_description()
