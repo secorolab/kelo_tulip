@@ -141,16 +141,16 @@ target_link_libraries(platform_driver
 )
 
 
-add_executable(kelo_gz_platform_controller
+add_executable(kelo_platform_controller_gz
   src/PlatformControllerGZ.cpp
 )
-ament_target_dependencies(kelo_gz_platform_controller
+ament_target_dependencies(kelo_platform_controller_gz
   rclcpp
   sensor_msgs
   geometry_msgs
   Boost
 )
-target_link_libraries(kelo_gz_platform_controller
+target_link_libraries(kelo_platform_controller_gz
   tulip_velocity_controller
   gsl
   gslcblas	
@@ -169,7 +169,7 @@ install(TARGETS tulip_library tulip_velocity_controller
 	RUNTIME DESTINATION bin
 )
 
-install(TARGETS platform_driver kelo_gz_platform_controller
+install(TARGETS platform_driver kelo_platform_controller_gz
 	DESTINATION lib/${PROJECT_NAME}
 )
 

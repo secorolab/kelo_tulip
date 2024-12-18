@@ -10,7 +10,7 @@ def generate_launch_description():
 
     sl.node(
         'kelo_tulip',
-        'kelo_gz_platform_controller',
+        'kelo_platform_controller_gz',
         output='screen',
         parameters=[
             config_file,

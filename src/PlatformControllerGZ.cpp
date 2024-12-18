@@ -18,8 +18,6 @@ PlatformControllerGZ::PlatformControllerGZ()
     pivot_joint_identifier_ = this->get_parameter("pivot_joint_identifier").as_string();
 
     for (int i = 0; i < num_wheels_; i++) {
-        this->declare_parameter("wheels.wheel" + std::to_string(i) + ".ethercat_number",
-          rclcpp::ParameterType::PARAMETER_INTEGER);
         this->declare_parameter(
           "wheels.wheel" + std::to_string(i) + ".x", rclcpp::ParameterType::PARAMETER_DOUBLE);
         this->declare_parameter(
@@ -86,17 +84,15 @@ void PlatformControllerGZ::step()
         message.data.resize(num_wheels_ * 2);
 
         for (int i = 0; i < num_wheels_; i++) {
-            int wheelNumber =
-              this->get_parameter("wheels.wheel" + std::to_string(i) + ".ethercat_number").as_int();
             float left_whl_sp, right_whl_sp;
             _controller.calculateWheelTargetVelocity(
-              wheelNumber, _pivotJointDataVec[i].pivotAngle, left_whl_sp, right_whl_sp);
+              i, _pivotJointDataVec[i].pivotAngle, left_whl_sp, right_whl_sp);
 
             auto wheel_identifier =
               this->get_parameter("wheels.wheel" + std::to_string(i) + ".identifier").as_string();
 
-            message.data[2 * wheelNumber] = left_whl_sp;
-            message.data[2 * wheelNumber + 1] = -right_whl_sp;
+            message.data[2 * i] = left_whl_sp;
+            message.data[2 * i + 1] = -right_whl_sp;
         }
 
         setAllHubWheelVelocities(message);
@@ -109,8 +105,7 @@ void PlatformControllerGZ::initDrives()
     double zDummy = 0.0;
     for (int i = 0; i < num_wheels_; i++) {
         kelo::WheelConfig wc;
-        wc.ethercatNumber =
-          this->get_parameter("wheels.wheel" + std::to_string(i) + ".ethercat_number").as_int();
+        wc.ethercatNumber = i;
         wc.x = this->get_parameter("wheels.wheel" + std::to_string(i) + ".x").as_double();
         wc.y = this->get_parameter("wheels.wheel" + std::to_string(i) + ".y").as_double();
         wc.a = this->get_parameter("wheels.wheel" + std::to_string(i) + ".a").as_double();
