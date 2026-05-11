@@ -74,6 +74,6 @@ struct WheelModel {
 	}
 };
 
-} // namespace kelp
+} // namespace kelo
 
 #endif // WHEELMODEL_H

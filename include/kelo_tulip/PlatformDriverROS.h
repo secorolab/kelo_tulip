@@ -51,7 +51,7 @@
 #include "kelo_tulip/msg/kelo_drives_input.hpp"
 #include "tf2_ros/transform_broadcaster.h"
 #include "tf2/LinearMath/Quaternion.h"
-#include "tf2_geometry_msgs/tf2_geometry_msgs.h"
+#include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 #include <nav_msgs/msg/odometry.hpp>
 #include <sensor_msgs/msg/imu.hpp>
 #include <sensor_msgs/msg/joy.hpp>
@@ -151,6 +151,8 @@ protected:
 	double joyVlinMax;
 	double joyVaMax;
 	double joyScale;
+	std::string base_link_name;
+	std::string odom_frame_name;
 	std::vector<float> prev_axes;
 
 	std::vector<double> prev_left_enc;

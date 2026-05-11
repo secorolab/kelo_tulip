@@ -145,7 +145,7 @@ int main (int argc, char** argv)
 	}
 	
 	// ROS main loop
-	rclcpp::Rate rate(20.0f); // hz
+	rclcpp::Rate rate(32.0f); // hz
 	while (rclcpp::ok()) {
 		rclcpp::spin_some(nh);		
 

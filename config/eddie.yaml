@@ -1,0 +1,46 @@
+/**:
+  ros__parameters:
+    num_wheels: 4
+    device: enx00e04c4163cd
+    base_link_name: "eddie_base_link"
+    odom_frame_name: "odom"
+
+    #vlin_max: 1.2  # m / s
+    #va_max: 1.1  # rad / s
+    #vlin_acc_max: 0.4  # m / s^2
+    #vlin_dec_max: 1.0  # m / s^2
+    #va_acc_max: 0.5  # rad / s^2
+    #va_dec_max: 1.0  # rad / s^2
+
+    wheel0:
+      ethercat_number: 3
+      x: 0.195
+      y: 0.21
+      a: 0.0
+
+    wheel1:
+      ethercat_number: 4
+      x: -0.195
+      y: 0.21
+      a: 0.0
+
+    wheel2:
+      ethercat_number: 6
+      x: -0.195
+      y: -0.21
+      a: 0.0
+
+    wheel3:
+      ethercat_number: 7
+      x: 0.195
+      y: -0.21
+      a: 0.0
+
+platform_driver:
+  ros__parameters:
+    modules:
+      list: ["platform_driver"]
+      platform_driver:
+        type: platform_driver
+        controller: velocity_platform_controller
+
